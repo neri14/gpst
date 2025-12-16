@@ -46,7 +46,12 @@ def main() -> int:
     args = parse_args()
     tool_args = {k: v for k, v in vars(args).items() if k != 'tool'}
 
-    success = tools[args.tool](**tool_args)
+    try:
+        logging.debug(f"Running tool '{args.tool}' with arguments: {tool_args}")
+        success = tools[args.tool](**tool_args)
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {e}")
+        success = False
     return 0 if success else 1
 
 
