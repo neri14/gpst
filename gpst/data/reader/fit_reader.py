@@ -5,5 +5,5 @@ from .reader import Reader
 
 
 class FitReader(Reader):
-    def read(self, path: Path) -> Track:
+    def read(self, path: Path) -> Track|None:
         raise NotImplementedError("FIT reading not yet implemented")

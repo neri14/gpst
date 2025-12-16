@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from .track import Track
-from .reader import FitReader, GpxReader
+from .reader import Reader, FitReader, GpxReader
 
 
 _readers = {
@@ -10,8 +10,8 @@ _readers = {
 }
 
 
-def load_track(path: Path) -> Track:
-    reader = _readers.get(path.suffix.lower())
+def load_track(path: Path) -> Track|None:
+    reader: Reader|None = _readers.get(path.suffix.lower())
     if reader is None:
         raise ValueError(f"Unsupported file extension '{path.suffix}'")
     return reader.read(path)

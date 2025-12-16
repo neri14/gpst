@@ -5,5 +5,5 @@ from ..track import Track
 
 class Reader(ABC):
     @abstractmethod
-    def read(self, path: Path) -> Track:
+    def read(self, path: Path) -> Track|None:
         pass
