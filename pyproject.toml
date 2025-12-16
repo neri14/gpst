@@ -19,8 +19,8 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
+    "garmin-fit-sdk>=21.178.0",
     # "rasterio>=1.4.0", # for future use - altitude fix based on DEMs
-    # "garmin-fit-sdk>=21.178.0", # for future use - Garmin FIT file support
     # "matplotlib>=3.10.0", # for future use - plotting support
 ]
 
