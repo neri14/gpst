@@ -36,6 +36,9 @@ Homepage = "https://github.com/neri14/gpst"
 Repository = "https://github.com/neri14/gpst"
 Issues = "https://github.com/neri14/gpst/issues"
 
+[tool.setuptools]
+packages = ["gpst"]
+
 [tool.setuptools.dynamic]
 version = {attr = "gpst.__version__"}
 
