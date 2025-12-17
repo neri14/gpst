@@ -5,6 +5,18 @@ import logging
 from pathlib import Path
 
 
+def verify_in_path(in_path: Path) -> bool:
+    if not in_path.exists():
+        logging.error(f"Input file '{in_path}' does not exist.")
+        return False
+    
+    if in_path.suffix.lower() not in ('.fit', '.gpx'):
+        logging.error(f"Input file '{in_path}' is not a FIT or GPX file.")
+        return False
+
+    return True
+
+
 def verify_out_path(out_path: Path) -> bool:
     if out_path.suffix.lower() != '.gpx':
         logging.error(f"Output file '{out_path}' is not a GPX file.")
@@ -22,4 +34,5 @@ def verify_out_path(out_path: Path) -> bool:
             if confirm.lower() != 'y':
                 logging.info("Operation cancelled by user.")
                 return False
+
     return True
