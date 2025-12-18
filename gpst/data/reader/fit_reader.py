@@ -313,7 +313,7 @@ class FitReader(Reader):
         cached_data = {}
         point = track.get_point(timestamp)
         for key,value in cache.items():
-            if key not in point:
+            if point is None or key not in point:
                 cached_data[key] = value
         if len(cached_data) > 0:
             track.upsert_point(timestamp, cached_data)
@@ -383,7 +383,7 @@ class FitReader(Reader):
                         r['active_climb'] = climb
 
             point = track.get_point(timestamp)
-            if 'active_climb' in point:
+            if point is not None and 'active_climb' in point:
                 del point['active_climb']
             if 'active_climb' in cache:
                 del cache['active_climb']

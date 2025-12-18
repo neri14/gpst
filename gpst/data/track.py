@@ -179,8 +179,8 @@ class Track:
 
         return f"Track({', '.join(data)})"
 
-    def get_point(self, timestamp: datetime) -> dict[str, Value]:
-        return self._points.get(timestamp, {})
+    def get_point(self, timestamp: datetime) -> dict[str, Value] | None:
+        return self._points.get(timestamp)
 
 
     def upsert_point(self, timestamp: datetime, data: dict[str, Value]) -> None:
