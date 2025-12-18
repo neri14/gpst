@@ -1,6 +1,13 @@
 from datetime import datetime, timezone
 
 
+def to_string(value: int | float | str | datetime | None) -> str:
+    if isinstance(value, datetime):
+        return timestamp_str(value)
+    else:
+        return str(value)
+
+
 def timestamp_str(dt: datetime|None) -> str:
     if dt is None or not isinstance(dt, datetime):
         return ""

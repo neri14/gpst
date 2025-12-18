@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterable, TypeAlias
 
-from ..utils.helpers import timestamp_str
+from ..utils.helpers import to_string, timestamp_str
 
 
 Value: TypeAlias = int | float | str | datetime
@@ -172,9 +172,9 @@ class Track:
         if 'name' in self._metadata:
             data.append(f"name=\"{self._metadata.get('name')}\"")
         if 'start_time' in self._metadata:
-            data.append(f"start_time=\"{timestamp_str(self._metadata.get('start_time'))}\"")
+            data.append(f"start_time=\"{to_string(self._metadata.get('start_time'))}\"")
         if 'end_time' in self._metadata:
-            data.append(f"end_time=\"{timestamp_str(self._metadata.get('end_time'))}\"")
+            data.append(f"end_time=\"{to_string(self._metadata.get('end_time'))}\"")
         data.append(f"num_points={len(self._points)}")
 
         return f"Track({', '.join(data)})"
@@ -197,7 +197,7 @@ class Track:
         self._metadata[key] = value
 
 
-    def _verify_type(self, key: str, value: Value, type_info: Type, timestamp: datetime|None = None):
+    def _verify_type(self, key: str, value: Value, type_info: Type | None, timestamp: datetime|None = None) -> None:
         tstr = f" at {timestamp_str(timestamp)}" if timestamp else ""
 
         if not type_info:

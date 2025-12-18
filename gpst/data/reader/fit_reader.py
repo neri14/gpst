@@ -4,6 +4,7 @@ import math
 from garmin_fit_sdk import Decoder, Stream, Profile
 from pathlib import Path
 
+from ...utils.helpers import to_string
 from ..track import Track, Value
 from .reader import Reader
 
@@ -329,7 +330,7 @@ class FitReader(Reader):
             logging.warning("EVENT message without event_type field.")
             return
 
-        data = {}
+        data: dict[str, Value] = {}
         if message['event'] == 'front_gear_change' and message['event_type'] == 'marker':
             front_gear_num = message.get('front_gear_num', None)
             if isinstance(front_gear_num, int) and 0 < front_gear_num < 255:
@@ -393,7 +394,7 @@ class FitReader(Reader):
             logging.warning("JUMP message without timestamp field.")
             return
 
-        data = {}
+        data: dict[str, Value] = {}
 
         if 'distance' in message and isinstance(message['distance'], (int, float)) and not math.isnan(message['distance']):
             data['jump_distance'] = message['distance']
@@ -410,16 +411,16 @@ class FitReader(Reader):
             track.upsert_point(message['timestamp'], data)
 
 
-    def _generate_activity_name(self, sport: str|None, sub_sport: str|None, sport_profile_name: str|None) -> str:
+    def _generate_activity_name(self, sport: Value | None, sub_sport: Value | None, sport_profile_name: Value | None) -> str:
         name = ""
 
         if sport is None:
             name = "Unknown"
         else:
-            name = sport.replace('_',' ').title()
+            name = to_string(sport).replace('_',' ').title()
 
         if sub_sport is not None and sub_sport != 'generic':
-            name = f"{sub_sport.replace('_',' ').title()} {name}"
+            name = f"{to_string(sub_sport).replace('_',' ').title()} {name}"
 
         if sport_profile_name is not None:
             name += f" ({sport_profile_name})"
