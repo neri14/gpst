@@ -38,7 +38,7 @@ options:
 
 ```
 $ gpst process -h
-usage: gpst process [-h] -o OUT_FILE IN_FILE
+usage: gpst process [-h] -o OUT_FILE [-y] IN_FILE
 
 positional arguments:
   IN_FILE               Path to input file (.gpx or .fit).
@@ -47,4 +47,5 @@ options:
   -h, --help            show this help message and exit
   -o, --output OUT_FILE
                         Path to the output file.
+  -y, --yes             Accept questions (e.g. overwrite existing output file).
 ```

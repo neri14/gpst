@@ -65,10 +65,10 @@ def add_argparser(subparsers: argparse._SubParsersAction) -> None:
         "-y", "--yes",
         action="store_true",
         dest="accept",
-        help="Accept questions.",
+        help="Accept questions (e.g. overwrite existing output file).",
     )
     # parser.add_argument(
-    #     "--fix-altitude",
+    #     "--fix-elevation",
     #     nargs="+",
     #     dest="dem_files",
     #     type=str,
