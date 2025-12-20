@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Iterable, TypeAlias
 
 from ..utils.helpers import to_string, timestamp_str
+from ..utils.logger import logger
 
 
 Value: TypeAlias = int | float | str | datetime
@@ -24,17 +25,18 @@ cadence_t           = Type('cadence',          int,          'revolutions per mi
 calories_t          = Type('calories',         float,        'kilocalories',            'kcal',   0,        None)
 distance_t          = Type('distance',         float,        'meters',                  'm',      0,        None)
 elevation_t         = Type('elevation',        float,        'meters',                  'm',      None,     None)
-grade_t             = Type('grade',            float,        'percent',                 '%',      0,        None)
-heart_rate_t        = Type('heart rate',       float,          'beats per minute',        'bpm',    0,        None)
+grade_t             = Type('grade',            float,        'percent',                 '%',      None,     None)
+heart_rate_t        = Type('heart rate',       float,        'beats per minute',        'bpm',    0,        None)
 latitude_t          = Type('latitude',         float,        'degrees',                 '°',      -90.0,    90.0)
 longitude_t         = Type('longitude',        float,        'degrees',                 '°',      -180.0,   180.0)
 power_t             = Type('power',            float,        'watts',                   'W',      0,        None)
-respiration_rate_t  = Type('respiration rate', float,          'breaths per minute',      'bpm',    0,        None)
+respiration_rate_t  = Type('respiration rate', float,        'breaths per minute',      'bpm',    0,        None)
 speed_t             = Type('speed',            float,        'meters per second',       'm/s',    0,        None)
 teeth_t             = Type('teeth',            int,          'number of teeth',         'teeth',  1,        None)
 temperature_t       = Type('temperature',      float,        'degrees Celsius',         '°C',     -273.15,  None)
 timestamp_t         = Type('timestamp',        datetime,     None,                      None,     None,     None)
 time_t              = Type('time',             float,        'seconds',                 's',      0,        None)
+vertical_speed_t    = Type('vertical speed',   float,        'meters per second',       'm/s',    None,     None)
 work_t              = Type('work',             int,          'joules',                  'J',      0,        None)
 
 int_t               = Type('int',              int,          None,                      None,     None,     None)
@@ -66,7 +68,7 @@ point_fields = {
     'temperature':                      temperature_t,
     'accumulated_power':                power_t,
     'gps_accuracy':                     distance_t,
-    'vertical_speed':                   speed_t,
+    'vertical_speed':                   vertical_speed_t,
     'calories':                         calories_t,
     'left_torque_effectiveness':        percent_t,
     'right_torque_effectiveness':       percent_t,
@@ -103,19 +105,24 @@ metadata_fields = {
     'total_elapsed_time':               time_t,
     'total_timer_time':                 time_t,
     'total_distance':                   distance_t,
+    'total_track_distance':             distance_t,
     'total_cycles':                     int_t,
     'total_work':                       work_t,
     'avg_speed':                        speed_t,
+    'avg_track_speed':                  speed_t,
     'max_speed':                        speed_t,
+    'max_track_speed':                  speed_t,
     'training_load_peak':               float_t,
     'total_grit':                       float_t,
     'avg_flow':                         float_t,
     'total_calories':                   calories_t,
     'avg_power':                        power_t,
     'max_power':                        power_t,
+    'normalized_power':                 power_t,
     'total_ascent':                     elevation_t,
     'total_descent':                    elevation_t,
-    'normalized_power':                 power_t,
+    'max_grade':                        grade_t,
+    'min_grade':                        grade_t,
     'training_stress_score':            float_t,
     'intensity_factor':                 float_t,
     'threshold_power':                  power_t,
@@ -183,6 +190,44 @@ class Track:
         return self._points.get(timestamp)
 
 
+    def sliding_window_iter(self, key: str, size: float) -> Iterable[tuple[datetime, dict, list[dict]]]:
+        def in_window(point: dict, target: float) -> bool:
+            value = point.get(key)
+            if isinstance(value, (int, float)):
+                delta: float = abs(value - target)
+                return delta <= (size / 2.0)
+            return False
+
+        seq = [(ts, point) for ts, point in self.points_iter]
+
+        for i, (ts, cur) in enumerate(self.points_iter):
+            value = cur.get(key, None)
+            if value is None:
+                logger.trace(f"Point without {key} field in sliding window calculation. Skipping.")
+                continue
+
+            if not isinstance(value, (int, float)):
+                logger.trace(f"Point with non-numeric {key} field in sliding window calculation. Skipping.")
+                continue
+
+            # backward until condition fails
+            left = []
+            j = i - 1
+            while j >= 0 and in_window(seq[j][1], value):
+                left.append(seq[j][1])
+                j -= 1
+            left.reverse()
+
+            # forward until condition fails
+            right = []
+            k = i + 1
+            while k < len(seq) and in_window(seq[k][1], value):
+                right.append(seq[k][1])
+                k += 1
+
+            yield ts, cur, left + [cur] + right
+
+
     def upsert_point(self, timestamp: datetime, data: dict[str, Value]) -> None:
         if not timestamp:
             raise ValueError("Timestamp must be provided for upserting a point.")
@@ -203,6 +248,13 @@ class Track:
         self._points[timestamp].update(data)
 
 
+    def remove_point_fields(self, fields: list[str]) -> None:
+        for point in self._points.values():
+            for field in fields:
+                if field in point:
+                    del point[field]
+
+
     def set_metadata(self, key: str, value: Value) -> None:
         if key in metadata_fields and metadata_fields[key].pytype == float and isinstance(value, int):
             value = float(value)
@@ -211,21 +263,29 @@ class Track:
         self._metadata[key] = value
 
 
+    def remove_metadata(self, keys: str | list[str]) -> None:
+        if isinstance(keys, str):
+            keys = [keys]
+        for key in keys:
+            if key in self._metadata:
+                del self._metadata[key]
+
+
     def _verify_type(self, key: str, value: Value, type_info: Type | None, timestamp: datetime|None = None) -> None:
         tstr = f" at {timestamp_str(timestamp)}" if timestamp else ""
 
         if not type_info:
-            logging.warning(f"Unknown field '{key}'{tstr}.")
+            logger.warning(f"Unknown field '{key}'{tstr}.")
             return
 
         if type_info.pytype and (not isinstance(value, type_info.pytype)):
-            logging.warning(f"Incorrect type for '{key}'{tstr}: expected {type_info.pytype}, got {type(value)}.")
+            logger.warning(f"Incorrect type for '{key}'{tstr}: expected {type_info.pytype}, got {type(value)}.")
             return
         
         if isinstance(value, (int, float)) and type_info.min_value is not None and value < type_info.min_value:
-            logging.warning(f"Value for '{key}'{tstr} below minimum: {value} < {type_info.min_value}.")
+            logger.warning(f"Value for '{key}'{tstr} below minimum: {value} < {type_info.min_value}.")
             return
         
         if isinstance(value, (int, float)) and type_info.max_value is not None and value > type_info.max_value:
-            logging.warning(f"Value for '{key}'{tstr} above maximum: {value} > {type_info.max_value}.")
+            logger.warning(f"Value for '{key}'{tstr} above maximum: {value} > {type_info.max_value}.")
             return

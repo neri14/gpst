@@ -103,10 +103,16 @@ class GpxWriter(Writer):
             ET.SubElement(trk_adx, f"{tag.adx}timertime").text = str(track.metadata['total_timer_time'])
         if 'total_distance' in track.metadata:
             ET.SubElement(trk_adx, f"{tag.adx}distance").text = str(track.metadata['total_distance'])
+        elif 'total_track_distance' in track.metadata:
+            ET.SubElement(trk_adx, f"{tag.adx}distance").text = str(track.metadata['total_track_distance'])
         if 'total_ascent' in track.metadata:
             ET.SubElement(trk_adx, f"{tag.adx}ascent").text = str(track.metadata['total_ascent'])
         if 'total_descent' in track.metadata:
             ET.SubElement(trk_adx, f"{tag.adx}descent").text = str(track.metadata['total_descent'])
+        if 'max_grade' in track.metadata:
+            ET.SubElement(trk_adx, f"{tag.adx}maxgrade").text = str(track.metadata['max_grade'])
+        if 'min_grade' in track.metadata:
+            ET.SubElement(trk_adx, f"{tag.adx}mingrade").text = str(track.metadata['min_grade'])
         if 'total_cycles' in track.metadata:
             ET.SubElement(trk_adx, f"{tag.adx}cycles").text = str(track.metadata['total_cycles'])
         if 'total_strokes' in track.metadata:
@@ -123,8 +129,12 @@ class GpxWriter(Writer):
         
         if 'avg_speed' in track.metadata:
             ET.SubElement(trk_adx, f"{tag.adx}avgspeed").text = str(track.metadata['avg_speed'])
+        elif 'avg_track_speed' in track.metadata:
+            ET.SubElement(trk_adx, f"{tag.adx}avgspeed").text = str(track.metadata['avg_track_speed'])
         if 'max_speed' in track.metadata:
             ET.SubElement(trk_adx, f"{tag.adx}maxspeed").text = str(track.metadata['max_speed'])
+        elif 'max_track_speed' in track.metadata:
+            ET.SubElement(trk_adx, f"{tag.adx}maxspeed").text = str(track.metadata['max_track_speed'])
         
         if 'avg_power' in track.metadata:
             ET.SubElement(trk_adx, f"{tag.adx}avgpower").text = str(track.metadata['avg_power'])

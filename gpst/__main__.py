@@ -1,19 +1,10 @@
 import argparse
-import logging
 import os
 import sys
 from .tools import tools
 from . import __version__
 
-
-def setup_logger() -> None:
-    log_level = logging.INFO
-    dbg = os.getenv("DEBUG", "0")
-    if dbg >= "1":
-        log_level = logging.DEBUG
-    elif dbg >= "2":
-        log_level = logging.NOTSET
-    logging.basicConfig(level=log_level, format="%(levelname)s: %(message)s")
+from .utils.logger import setup_logger, logger
 
 
 def parse_args() -> argparse.Namespace:
@@ -47,10 +38,10 @@ def main() -> int:
     tool_args = {k: v for k, v in vars(args).items() if k != 'tool'}
 
     try:
-        logging.debug(f"Running tool '{args.tool}' with arguments: {tool_args}")
+        logger.debug(f"Running tool '{args.tool}' with arguments: {tool_args}")
         success = tools[args.tool](**tool_args)
     except Exception as e:
-        logging.error(f"An unexpected error occurred: {e}")
+        logger.error(f"An unexpected error occurred: {e}")
         success = False
     return 0 if success else 1
 

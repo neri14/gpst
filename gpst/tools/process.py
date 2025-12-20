@@ -3,6 +3,8 @@ import logging
 
 from pathlib import Path
 
+from ..data.processors import calculate_additional_data
+
 from ..data.load_track import load_track
 from ..data.save_track import save_track
 from ._tool_descriptor import Tool
@@ -22,8 +24,12 @@ def main(in_path: Path, out_path: Path, accept: bool) -> bool:
         logging.error(f"Failed to load track from '{in_path}'.")
         return False
 
-    #TODO if any of processing options were selected, process the track here
-    # logging.info(f"Processing track {track}...")
+
+    #TODO if fix elevation - fix it here and remove all fields related to elevation
+
+
+    logging.info("Calculating additional data...")
+    track = calculate_additional_data(track)
 
     logging.info(f"Storing '{out_path}'...")
     ok = save_track(track, out_path)
@@ -47,50 +53,6 @@ def add_argparser(subparsers: argparse._SubParsersAction) -> None:
         metavar="IN_FILE",
         help="Path to input file (.gpx or .fit)."
     )
-    # parser.add_argument(
-    #     "--calculate",
-    #     nargs="+",
-    #     dest="calculate_fields",
-    #     help="Calculate additional fields ('all' for all additional fields).",
-    # )
-    # parser.add_argument(
-    #     "--fix-altitude",
-    #     nargs="+",
-    #     dest="dem_files",
-    #     type=str,
-    #     metavar="DEM_FILE",
-    #     help="Correct elevation data using DEM files.",
-    # )
-    # parser.add_argument(
-    #     "--trim-begin",
-    #     dest="trim_begin",
-    #     type=float,
-    #     metavar="SECONDS",
-    #     help="Trim track start seconds.",
-    # )
-    # parser.add_argument(
-    #     "--trim-end",
-    #     dest="trim_end",
-    #     type=float,
-    #     metavar="SECONDS",
-    #     help="Trim track end seconds.",
-    # )
-    # parser.add_argument(
-    #     "--add-metadata",
-    #     nargs="+",
-    #     dest="add_metadata",
-    #     type=str,
-    #     metavar="KEY=VALUE",
-    #     help="Add metadata to the track (format: KEY=VALUE).",
-    # )
-    # parser.add_argument(
-    #     "--remove-metadata",
-    #     nargs="+",
-    #     dest="remove_metadata",
-    #     type=str,
-    #     metavar="KEY",
-    #     help="Remove specified metadata from the track.",
-    # )
     parser.add_argument(
         "-o", "--output",
         dest="out_path",
@@ -105,6 +67,14 @@ def add_argparser(subparsers: argparse._SubParsersAction) -> None:
         dest="accept",
         help="Accept questions.",
     )
+    # parser.add_argument(
+    #     "--fix-altitude",
+    #     nargs="+",
+    #     dest="dem_files",
+    #     type=str,
+    #     metavar="DEM_FILE",
+    #     help="Correct elevation data using DEM files.",
+    # )
 
 
 tool = Tool(
