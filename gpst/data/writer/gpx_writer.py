@@ -1,13 +1,14 @@
 import logging
 import xml.etree.ElementTree as ET
 
+from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 from xml.dom import minidom
 
 from ..track import Track
 from .writer import Writer
-from ...utils.helpers import timestamp_str
+from ...utils.helpers import to_string
 
 
 namespace_urls = {
@@ -66,7 +67,7 @@ class GpxWriter(Writer):
         ET.SubElement(metadata, f"{tag.gpx}link", {'href': "https://github.com/neri14/fitt"})
 
         if 'start_time' in track.metadata:
-            ET.SubElement(metadata, f"{tag.gpx}time").text = timestamp_str(track.metadata['start_time'])
+            ET.SubElement(metadata, f"{tag.gpx}time").text = to_string(track.metadata['start_time'])
         if all(k in track.metadata for k in ('minlat', 'minlon', 'maxlat', 'maxlon')):
             ET.SubElement(metadata, f"{tag.gpx}bounds", {
                 'minlat': str(track.metadata['minlat']),
@@ -79,15 +80,15 @@ class GpxWriter(Writer):
 
     def _create_trk_element(self, gpx: ET.Element, track: Track) -> ET.Element:
         trk = ET.SubElement(gpx, f"{tag.gpx}trk")
-        ET.SubElement(trk, f"{tag.gpx}name").text = track.metadata['name'] if 'name' in track.metadata else "Unnamed Activity"
+        ET.SubElement(trk, f"{tag.gpx}name").text = str(track.metadata['name']) if 'name' in track.metadata else "Unnamed Activity"
 
         if 'device' in track.metadata:
-            ET.SubElement(trk, f"{tag.gpx}src").text = track.metadata['device']
+            ET.SubElement(trk, f"{tag.gpx}src").text = str(track.metadata['device'])
 
         track_type = track.metadata['sport'] if 'sport' in track.metadata else "other"
         if 'sub_sport' in track.metadata:
             track_type = f"{track.metadata['sub_sport']}_{track_type}"
-        ET.SubElement(trk, f"{tag.gpx}type").text = track_type
+        ET.SubElement(trk, f"{tag.gpx}type").text = str(track_type)
 
         return trk
 
@@ -170,16 +171,17 @@ class GpxWriter(Writer):
         return trkseg
 
 
-    def _create_trkpt_elements(self, trkseg: ET.Element, track: Track) -> None:
+    def _create_trkpt_elements(self, trkseg: ET.Element, track: Track) -> list[ET.Element]:
         trkpts = []
         for timestamp, data in track.points_iter:
             trkpt = self._create_trkpt_element(trkseg, timestamp, data)
-            trkpts.append(trkpt)
+            if trkpt:
+                trkpts.append(trkpt)
         logging.debug(f"Created {len(trkpts)} track points in GPX.")
         return trkpts
 
 
-    def _create_trkpt_element(self, trkseg: ET.Element, timestamp: float, data: dict) -> ET.Element:
+    def _create_trkpt_element(self, trkseg: ET.Element, timestamp: datetime, data: dict) -> ET.Element | None:
         if 'latitude' not in data or 'longitude' not in data:
             logging.warning("Skipping record without position when generating gpx file")
             return None
@@ -191,7 +193,7 @@ class GpxWriter(Writer):
         if 'elevation' in data:
             ET.SubElement(trkpt, f"{tag.gpx}ele").text = str(data['elevation'])
 
-        ET.SubElement(trkpt, f"{tag.gpx}time").text = timestamp_str(timestamp)
+        ET.SubElement(trkpt, f"{tag.gpx}time").text = to_string(timestamp)
 
         trkpt_ext = ET.SubElement(trkpt, f"{tag.gpx}extensions")
 
@@ -278,7 +280,7 @@ class GpxWriter(Writer):
         return trkpt
 
 
-    def _write_file(self, gpx: ET.Element, path: Path) -> None:
+    def _write_file(self, gpx: ET.Element, path: Path) -> bool:
         try:
             rough = ET.tostring(gpx, 'utf-8')
             pretty = minidom.parseString(rough).toprettyxml(indent="  ")

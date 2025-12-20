@@ -195,7 +195,7 @@ class Track:
 
         for key in data:
             if key in point_fields and point_fields[key].pytype == float and isinstance(data[key], int):
-                data[key] = float(data[key])
+                data[key] = float(data[key])  # type: ignore[arg-type]
 
             self._verify_type(key, data[key], point_fields.get(key), timestamp)
         if timestamp not in self._points:
