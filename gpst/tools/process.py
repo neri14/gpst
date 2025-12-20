@@ -9,10 +9,10 @@ from ._tool_descriptor import Tool
 from ._common import verify_in_path, verify_out_path
 
 
-def main(in_path: Path, out_path: Path) -> bool:
+def main(in_path: Path, out_path: Path, accept: bool) -> bool:
     if not verify_in_path(in_path):
         return False
-    if not verify_out_path(out_path):
+    if not verify_out_path(out_path, accept):
         return False
 
     logging.info(f"Loading '{in_path}'...")
@@ -98,6 +98,12 @@ def add_argparser(subparsers: argparse._SubParsersAction) -> None:
         metavar="OUT_FILE",
         required=True,
         help="Path to the output file.",
+    )
+    parser.add_argument(
+        "-y", "--yes",
+        action="store_true",
+        dest="accept",
+        help="Accept questions.",
     )
 
 
