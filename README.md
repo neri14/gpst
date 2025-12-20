@@ -59,6 +59,7 @@ options:
 
 ### gpst plot
 
+```
 $ gpst plot -h
 usage: gpst plot [-h] -x X_AXIS -y Y_AXIS [Y_AXIS ...] [--y-right Y_AXIS_RIGHT [Y_AXIS_RIGHT ...]] [-t {line,scatter}] [--type-right {line,scatter}] [-o OUTPUT] FILE
 
@@ -77,3 +78,4 @@ options:
   --type-right {line,scatter}
                         Plot type for right y-axis: line, scatter. Default is line.
   -o, --output OUTPUT   Path to the output image file. If not provided, shows the plot interactively
+```
