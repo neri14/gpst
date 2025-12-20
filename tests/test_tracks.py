@@ -139,6 +139,28 @@ def test_ok_metadata_update():
     assert track.metadata["name"] == "Updated Name", "Metadata 'name' should be updated correctly."
 
 
+
+def test_ok_point_int_to_float_conversion():
+    track = Track()
+
+    timestamp_in = datetime(2024, 1, 1, 12, 0, 0)
+
+    track.upsert_point(timestamp_in, {"speed": 30})
+
+    point_out = track.get_point(timestamp_in)
+    assert point_out is not None, "Point should exist after upsert."
+    assert isinstance(point_out["speed"], float), "Point 'speed' should be of type float."
+    assert point_out["speed"] == 30.0, "Point 'speed' should be converted to float."
+
+
+def test_ok_metadata_int_to_float_conversion():
+    track = Track()
+
+    track.set_metadata("avg_speed", 45)
+    assert isinstance(track.metadata["avg_speed"], float), "Metadata 'avg_speed' should be of type float."
+    assert track.metadata["avg_speed"] == 45.0, "Metadata 'avg_speed' should be converted to float."
+
+
 LOGGER = logging.getLogger(__name__)
 
 def test_nok_point_type_verification_warnings(caplog):
@@ -183,6 +205,23 @@ def test_nok_metadata_type_verification_warnings(caplog):
     assert track.metadata["start_time"] == "not-a-datetime", "Metadata 'start_time' should be stored as provided despite type warning."
     assert track.metadata["minlat"] == -100.0, "Metadata 'minlat' should be stored as provided despite range warning."
     assert track.metadata["maxlon"] == 200.0, "Metadata 'maxlon' should be stored as provided despite range warning."
+
+
+def test_nok_add_unkown_point_field_warnings(caplog):
+    track = Track()
+    timestamp_in = datetime(2024, 1, 1, 12, 0, 0)
+
+    with caplog.at_level(logging.WARNING):
+        track.upsert_point(timestamp_in, {"unknown_field": "some_value"})
+    assert any("Unknown field" in record.message for record in caplog.records), "An unknown field warning should be logged for point."
+
+
+def test_nok_add_unknown_metadata_field_warnings(caplog):
+    track = Track()
+
+    with caplog.at_level(logging.WARNING):
+        track.set_metadata("unknown_field", "some_value")
+    assert any("Unknown field" in record.message for record in caplog.records), "An unknown field warning should be logged for metadata."
 
 
 def test_nok_upsert_point_no_timestamp():

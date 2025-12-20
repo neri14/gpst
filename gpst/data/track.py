@@ -196,6 +196,9 @@ class Track:
         for key, value in data.items():
             self._verify_type(key, value, point_fields.get(key), timestamp)
 
+            if key in point_fields and point_fields[key].pytype == float and isinstance(value, int):
+                data[key] = float(value)
+
         if timestamp not in self._points:
             self._points[timestamp] = {}
         self._points[timestamp].update(data)
@@ -203,6 +206,9 @@ class Track:
 
     def set_metadata(self, key: str, value: Value) -> None:
         self._verify_type(key, value, metadata_fields.get(key))
+        if key in metadata_fields and metadata_fields[key].pytype == float and isinstance(value, int):
+            value = float(value)
+
         self._metadata[key] = value
 
 
@@ -212,10 +218,7 @@ class Track:
         if not type_info:
             logging.warning(f"Unknown field '{key}'{tstr}.")
             return
-        
-        if type_info.pytype and type_info.pytype is float and isinstance(value, int):
-            value = float(value)
-        
+
         if type_info.pytype and (not isinstance(value, type_info.pytype)):
             logging.warning(f"Incorrect type for '{key}'{tstr}: expected {type_info.pytype}, got {type(value)}.")
             return
