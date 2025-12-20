@@ -54,13 +54,13 @@ class FitReader(Reader):
             track.set_metadata('start_time', message['start_time'])
 
         if 'start_position_lat' in message:
-            track.set_metadata('start_position_lat', message['start_position_lat'] * self.semicircles_factor)
+            track.set_metadata('start_latitude', message['start_position_lat'] * self.semicircles_factor)
         if 'start_position_long' in message:
-            track.set_metadata('start_position_long', message['start_position_long'] * self.semicircles_factor)
+            track.set_metadata('start_longitude', message['start_position_long'] * self.semicircles_factor)
         if 'end_position_lat' in message:
-            track.set_metadata('end_position_lat', message['end_position_lat'] * self.semicircles_factor)
+            track.set_metadata('end_latitude', message['end_position_lat'] * self.semicircles_factor)
         if 'end_position_long' in message:
-            track.set_metadata('end_position_long', message['end_position_long'] * self.semicircles_factor)
+            track.set_metadata('end_longitude', message['end_position_long'] * self.semicircles_factor)
 
         if 'nec_lat' in message:
             track.set_metadata('maxlat', message['nec_lat'] * self.semicircles_factor)
@@ -243,9 +243,9 @@ class FitReader(Reader):
         record_data = {'timestamp': timestamp}
         
         if 'position_lat' in message:
-            record_data['position_lat'] = message['position_lat'] * self.semicircles_factor
+            record_data['latitude'] = message['position_lat'] * self.semicircles_factor
         if 'position_long' in message:
-            record_data['position_long'] = message['position_long'] * self.semicircles_factor
+            record_data['longitude'] = message['position_long'] * self.semicircles_factor
 
         if 'enhanced_altitude' in message:
             record_data['elevation'] = message['enhanced_altitude']

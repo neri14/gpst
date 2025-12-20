@@ -48,8 +48,8 @@ unknown_t           = Type('unknown',          None,         None,              
 point_fields = {
     'time':                             time_t,
     'timestamp':                        timestamp_t,
-    'position_lat':                     latitude_t,
-    'position_long':                    longitude_t,
+    'latitude':                         latitude_t,
+    'longitude':                        longitude_t,
     'elevation':                        elevation_t,
     'smooth_elevation':                 elevation_t,
     'heart_rate':                       heart_rate_t,
@@ -92,10 +92,10 @@ point_fields = {
 metadata_fields = {
     'start_time':                       timestamp_t,
     'end_time':                         timestamp_t,#"timestamp" in fit session msg is not reliable - either calculate or delete
-    'start_position_lat':               latitude_t,
-    'start_position_long':              longitude_t,
-    'end_position_lat':                 latitude_t,
-    'end_position_long':                longitude_t,
+    'start_latitude':                   latitude_t,
+    'start_longitude':                  longitude_t,
+    'end_latitude':                     latitude_t,
+    'end_longitude':                    longitude_t,
     'minlat':                           latitude_t,
     'minlon':                           longitude_t,
     'maxlat':                           latitude_t,
@@ -184,6 +184,15 @@ class Track:
 
 
     def upsert_point(self, timestamp: datetime, data: dict[str, Value]) -> None:
+        if not timestamp:
+            raise ValueError("Timestamp must be provided for upserting a point.")
+        
+        if not isinstance(timestamp, datetime):
+            raise TypeError(f"Timestamp must be a datetime object, got {type(timestamp)}.")
+
+        if not isinstance(data, dict):
+            raise TypeError(f"Data must be a dictionary, got {type(data)}.")
+
         for key, value in data.items():
             self._verify_type(key, value, point_fields.get(key), timestamp)
 
