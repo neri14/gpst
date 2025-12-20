@@ -193,22 +193,21 @@ class Track:
         if not isinstance(data, dict):
             raise TypeError(f"Data must be a dictionary, got {type(data)}.")
 
-        for key, value in data.items():
-            self._verify_type(key, value, point_fields.get(key), timestamp)
+        for key in data:
+            if key in point_fields and point_fields[key].pytype == float and isinstance(data[key], int):
+                data[key] = float(data[key])
 
-            if key in point_fields and point_fields[key].pytype == float and isinstance(value, int):
-                data[key] = float(value)
-
+            self._verify_type(key, data[key], point_fields.get(key), timestamp)
         if timestamp not in self._points:
             self._points[timestamp] = {}
         self._points[timestamp].update(data)
 
 
     def set_metadata(self, key: str, value: Value) -> None:
-        self._verify_type(key, value, metadata_fields.get(key))
         if key in metadata_fields and metadata_fields[key].pytype == float and isinstance(value, int):
             value = float(value)
 
+        self._verify_type(key, value, metadata_fields.get(key))
         self._metadata[key] = value
 
 
