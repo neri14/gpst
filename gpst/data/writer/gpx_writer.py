@@ -1,4 +1,3 @@
-import logging
 import xml.etree.ElementTree as ET
 
 from datetime import datetime
@@ -9,6 +8,7 @@ from xml.dom import minidom
 from ..track import Track
 from .writer import Writer
 from ...utils.helpers import to_string
+from ...utils.logger import logger
 
 
 namespace_urls = {
@@ -33,7 +33,7 @@ tag = SimpleNamespace(
 
 class GpxWriter(Writer):
     def write(self, track: Track, path: Path) -> bool:
-        logging.debug(f"Writing GPX file to '{path}'...")
+        logger.debug(f"Writing GPX file to '{path}'...")
 
         self._register_namespaces()
         gpx = self._create_gpx_element()
@@ -187,13 +187,13 @@ class GpxWriter(Writer):
             trkpt = self._create_trkpt_element(trkseg, timestamp, data)
             if trkpt:
                 trkpts.append(trkpt)
-        logging.debug(f"Created {len(trkpts)} track points in GPX.")
+        logger.debug(f"Created {len(trkpts)} track points in GPX.")
         return trkpts
 
 
     def _create_trkpt_element(self, trkseg: ET.Element, timestamp: datetime, data: dict) -> ET.Element | None:
         if 'latitude' not in data or 'longitude' not in data:
-            logging.warning("Skipping record without position when generating gpx file")
+            logger.warning("Skipping record without position when generating gpx file")
             return None
 
         trkpt = ET.SubElement(trkseg, f"{tag.gpx}trkpt",
@@ -297,7 +297,7 @@ class GpxWriter(Writer):
             with open(path, "w", encoding="utf-8") as f:
                 f.write(pretty)
         except Exception as e:
-            logging.error(f"Error writing GPX file to '{path}': {e}")
+            logger.error(f"Error writing GPX file to '{path}': {e}")
             return False
 
         return True

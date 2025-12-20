@@ -1,9 +1,9 @@
 import importlib
-import logging
 import pkgutil
 from pathlib import Path
 
 from ._tool_descriptor import Tool
+from ..utils.logger import logger
 
 
 def _discover_tools() -> dict[str, Tool]:
@@ -18,10 +18,10 @@ def _discover_tools() -> dict[str, Tool]:
 
             if hasattr(module, 'tool') and isinstance(module.tool, Tool):
                 if module.tool.name in tools:
-                    logging.warning(f"Duplicate tool name detected: '{module.tool.name}' - skipping.")
+                    logger.warning(f"Duplicate tool name detected: '{module.tool.name}' - skipping.")
                 tools[module.tool.name] = module.tool
         except Exception as e:
-            logging.warning(f"Failed to import tool module '{modname}': {e}")
+            logger.warning(f"Failed to import tool module '{modname}': {e}")
 
     return tools
 

@@ -1,10 +1,10 @@
-import logging
 import math
 
 from garmin_fit_sdk import Decoder, Stream, Profile
 from pathlib import Path
 
 from ...utils.helpers import to_string
+from ...utils.logger import logger
 from ..track import Track, Value
 from .reader import Reader
 
@@ -39,12 +39,12 @@ class FitReader(Reader):
             _, errors = decoder.read(mesg_listener=mesg_listener)
 
             if errors:
-                logging.error(f"Errors decoding fit file:")
+                logger.error(f"Errors decoding fit file:")
                 for error in errors:
-                    logging.error(f" - {error}")
+                    logger.error(f" - {error}")
                 return None
         except Exception as e:
-            logging.error(f"Failed to read fit file: {e}")
+            logger.error(f"Failed to read fit file: {e}")
             return None
         return track
 
@@ -236,7 +236,7 @@ class FitReader(Reader):
 
     def _handle_record_message(self, message: dict, cache: dict[str, Value], track: Track) -> None:
         if 'timestamp' not in message:
-            logging.warning("RECORD message without timestamp field.")
+            logger.warning("RECORD message without timestamp field.")
             return
         
         timestamp = message['timestamp']
@@ -321,13 +321,13 @@ class FitReader(Reader):
 
     def _handle_event_message(self, message: dict, cache: dict[str, Value], track: Track) -> None:
         if 'timestamp' not in message:
-            logging.warning("EVENT message without timestamp field.")
+            logger.warning("EVENT message without timestamp field.")
             return
         if 'event' not in message:
-            logging.warning("EVENT message without event field.")
+            logger.warning("EVENT message without event field.")
             return
         if 'event_type' not in message:
-            logging.warning("EVENT message without event_type field.")
+            logger.warning("EVENT message without event_type field.")
             return
 
         data: dict[str, Value] = {}
@@ -357,13 +357,13 @@ class FitReader(Reader):
 
     def _handle_climb_message(self, message: dict, cache: dict[str, Value], track: Track) -> None:
         if 'timestamp' not in message:
-            logging.warning("ClimbPro message without timestamp field.")
+            logger.warning("ClimbPro message without timestamp field.")
             return
         if 'climb_pro_event' not in message:
-            logging.warning("ClimbPro message without climb_pro_event field.")
+            logger.warning("ClimbPro message without climb_pro_event field.")
             return
         if 'climb_number' not in message:
-            logging.warning("ClimbPro message without climb_number field.")
+            logger.warning("ClimbPro message without climb_number field.")
             return
 
         timestamp = message['timestamp']
@@ -375,7 +375,7 @@ class FitReader(Reader):
             cache['active_climb'] = climb
         elif message['climb_pro_event'] == 'complete':
             if 'active_climb' not in cache:
-                logging.info("ClimbPro 'complete' event without ClimbPro 'start' event. Setting climb active from start.")
+                logger.info("ClimbPro 'complete' event without ClimbPro 'start' event. Setting climb active from start.")
                 climb = message['climb_number']
 
                 for t,r in track.points_iter:
@@ -391,7 +391,7 @@ class FitReader(Reader):
 
     def _handle_jump_message(self, message: dict, track: Track) -> None:
         if 'timestamp' not in message:
-            logging.warning("JUMP message without timestamp field.")
+            logger.warning("JUMP message without timestamp field.")
             return
 
         data: dict[str, Value] = {}
