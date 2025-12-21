@@ -10,7 +10,9 @@ from ._common import verify_in_path, verify_out_path
 from ..utils.logger import logger
 
 
-def main(in_path: Path, out_path: Path, dem_files: list[Path] | None, dem_crs: str | None, accept: bool) -> bool:
+def main(in_path: Path, out_path: Path, accept: bool,
+         dem_files: list[Path] | None, dem_crs: str | None,
+         elevation_smoothing_window: int, grade_calculation_window: int) -> bool:
     if not verify_in_path(in_path):
         return False
     if not verify_out_path(out_path, accept):
@@ -28,7 +30,9 @@ def main(in_path: Path, out_path: Path, dem_files: list[Path] | None, dem_crs: s
         track = fix_elevation(track, dem_files, dem_crs, report_basepath=out_path.with_suffix(''))
 
     logger.info("Calculating additional data...")
-    track = calculate_additional_data(track)
+    track = calculate_additional_data(track,
+                                      elevation_smoothing_window=elevation_smoothing_window,
+                                      grade_calculation_window=grade_calculation_window)
 
     logger.info(f"Storing '{out_path}'...")
     ok = save_track(track, out_path)
@@ -80,6 +84,22 @@ def add_argparser(subparsers: argparse._SubParsersAction) -> None:
         type=str,
         metavar="DEM_CRS",
         help="Coordinate reference system of the DEM files to be used if no CRS is specified in the files themselves (e.g. 'EPSG:4326').",
+    )
+    parser.add_argument(
+        "--elevation-smoothing-window",
+        dest="elevation_smoothing_window",
+        type=int,
+        metavar="METERS",
+        help="Smoothing window for elevation data in meters (default: 100).",
+        default=100
+    )
+    parser.add_argument(
+        "--grade-calculation-window",
+        dest="grade_calculation_window",
+        type=int,
+        metavar="METERS",
+        help="Window size for grade calculation in meters (default: 100).",
+        default=100
     )
 
 

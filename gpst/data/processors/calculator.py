@@ -8,9 +8,7 @@ from ..track import Track, Value, latitude_t, longitude_t
 from ...utils.logger import logger
 
 
-SMOOTH_ELEVATION_WINDOW = 100 # meters
-MAX_GRADE_WINDOW = 50 # meters
-MIN_GRADE_WINDOW = 20 # meters
+MIN_GRADE_WINDOW = 0.4 # 40% grade window
 
 
 def _calculate_times(track: Track) -> Track:
@@ -301,14 +299,14 @@ def _calculate_power_averages(track: Track) -> Track:
     return track
 
 
-def _calculate_smooth_elevation(track: Track) -> Track:
+def _calculate_smooth_elevation(track: Track, window_size: int) -> Track:
     """Calculate smooth_elevation point field using a simple moving average."""
 
     logger.debug("Calculating smooth elevation for track points...")
 
     n: int = 0
 
-    for ts, point, window in track.sliding_window_iter(key='distance', size=SMOOTH_ELEVATION_WINDOW):
+    for ts, point, window in track.sliding_window_iter(key='distance', size=window_size):
         if 'smooth_elevation' not in point:
             elevs = [p['elevation'] for p in window if 'elevation' in p and isinstance(p['elevation'], (int, float))]
             if len(elevs) > 0:
@@ -320,10 +318,12 @@ def _calculate_smooth_elevation(track: Track) -> Track:
     return track
 
 
-def _calculate_grade(track: Track) -> Track:
+def _calculate_grade(track: Track, window_size: int) -> Track:
     """Calculate grade point field."""
 
     logger.debug("Calculating grade...")
+
+    min_grade_window = MIN_GRADE_WINDOW * window_size
 
     alt_key = 'smooth_elevation'
     dist_key = 'distance'
@@ -333,7 +333,7 @@ def _calculate_grade(track: Track) -> Track:
 
     n: int = 0
 
-    for ts, point, window in track.sliding_window_iter(key=dist_key, size=MAX_GRADE_WINDOW):
+    for ts, point, window in track.sliding_window_iter(key=dist_key, size=window_size):
         grade = 0.0
 
         if 'grade' in point and isinstance(point['grade'], (int, float)):
@@ -351,10 +351,10 @@ def _calculate_grade(track: Track) -> Track:
                 z1,y1 = altitudes[0]
                 z2,y2 = altitudes[-1]
 
-                if dist - z1 < MIN_GRADE_WINDOW/2:
-                    continue # don't calculate grade - covers beginning of activity
-                if z2 - dist < MIN_GRADE_WINDOW/2:
-                    continue # don't calculate grade - covers end of activity
+                if dist - z1 < min_grade_window/2:
+                    continue # don't calculate grade if no points available at least half of min grade window - covers beginning of activity
+                if z2 - dist < min_grade_window/2:
+                    continue # don't calculate grade if no points available at least half of min grade window - covers end of activity
 
                 z = z2 - z1
                 y = y2 - y1
@@ -453,15 +453,15 @@ def _calculate_misc(track: Track) -> Track:
     return track
 
 
-def calculate_additional_data(track: Track) -> Track:
+def calculate_additional_data(track: Track, elevation_smoothing_window: int, grade_calculation_window: int) -> Track:
     track = _calculate_times(track) # metadata: start_time, end_time, total_elapsed_time, fields: time
     track = _calculate_bounds(track) # metadata: minlat, minlon, maxlat, maxlon
     track = _calculate_distances(track) # metadata: total_distance, total_track_distance, fields: distance, track_distance
     track = _calculate_speeds(track) # metadata: avg_speed, avg_track_speed, max_speed, max_track_speed, fields: speed, track_speed
     track = _calculate_vspeeds(track) # fields: vertical_speed
     track = _calculate_power_averages(track) # fields: power3s, power10s, power30s
-    track = _calculate_smooth_elevation(track) # fields: smooth_elevation
-    track = _calculate_grade(track)
+    track = _calculate_smooth_elevation(track, window_size=elevation_smoothing_window) # fields: smooth_elevation
+    track = _calculate_grade(track, window_size=grade_calculation_window) # metadata: max_grade, min_grade, fields: grade
     track = _calculate_ascent_descent(track) # metadata: total_ascent, total_descent, avg_vam
     track = _calculate_misc(track) # metadata: jump_count
 
