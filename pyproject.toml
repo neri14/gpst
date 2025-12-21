@@ -20,7 +20,7 @@ classifiers = [
 ]
 dependencies = [
     "garmin-fit-sdk>=21.178.0",
-    # "rasterio>=1.4.0", # for future use - altitude fix based on DEMs
+    "rasterio>=1.4.0",
     "matplotlib>=3.10.0",
 ]
 
