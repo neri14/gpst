@@ -5,7 +5,7 @@ import rasterio # type: ignore[import-untyped]
 
 from matplotlib.typing import ColorType
 from pathlib import Path
-from rasterio.warp import transform
+from rasterio.warp import transform # type: ignore[import-untyped]
 from typing import Generator
 
 from ..track import Track
