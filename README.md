@@ -11,20 +11,17 @@
 
 ## Limitations
 
-- GPX rte and wpt (and FIT equivalents) are not supported
+- GPX rte and wpt (and FIT equivalents) are ignored
+- track and segment split in GPX (and FIT equivalents) are ignored
+- GPX 1.0 is not supported (yet)
+- unsupported fields are not preserved (see [list of supported Fields](./FIELDS.md))
 
-- does not support GPX 1.0 only 1.1
-
-- mostly suppots gpx extensions:
+- following GPX extensions are utilized for working with GPX files:
   - http://www.garmin.com/xmlschemas/TrackPointExtension/v1
   - http://www.garmin.com/xmlschemas/TrackPointExtension/v2
   - http://www.garmin.com/xmlschemas/GpxExtensions/v2
   - http://www.garmin.com/xmlschemas/GpxExtensions/v3
   - http://www.n3r1.com/xmlschemas/ActivityDataExtensions/v1
-
-- does not preserve unsupported fields(!), see [list of supported Fields](./FIELDS.md)
-
-- supports single track and single track segment GPX files (and FIT equivalents)
 
 
 ## Example Usage
