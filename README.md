@@ -26,6 +26,7 @@ GPS Tools - A collection of tools to work with GPS track files.
 
 positional arguments:
   tool        Available tools:
+    map       Draw map of input file.
     plot      Plot data from the fit file.
     process   Process GPS track file and write results to a GPX file.
 
@@ -39,7 +40,7 @@ options:
 
 ```
 $ gpst process -h
-usage: gpst process [-h] -o OUT_FILE [-y] IN_FILE
+usage: gpst process [-h] -o OUT_FILE [-y] [--fix-elevation DEM_FILE [DEM_FILE ...]] [--dem-crs DEM_CRS] [--elevation-smoothing-window METERS] [--grade-calculation-window METERS] IN_FILE
 
 positional arguments:
   IN_FILE               Path to input file (.gpx or .fit).
@@ -49,12 +50,26 @@ options:
   -o, --output OUT_FILE
                         Path to the output file.
   -y, --yes             Accept questions (e.g. overwrite existing output file).
+  --fix-elevation DEM_FILE [DEM_FILE ...]
+                        Correct elevation data using DEM files.
+  --dem-crs DEM_CRS     Coordinate reference system of the DEM files to be used if no CRS is specified in the files themselves (e.g. 'EPSG:4326').
+  --elevation-smoothing-window METERS
+                        Smoothing window for elevation data in meters (default: 100).
+  --grade-calculation-window METERS
+                        Window size for grade calculation in meters (default: 100).
 ```
 
 Example DEM coordinate reference systems:
-
 - PL-KRON86-NH -> 'EPSG:2180'
 - PL-EVRF2007-NH -> 'EPSG:9651'
+
+
+When `--fix-elevation` is in use, tool produces report in form of csv file and png plot, e.g.:
+
+`$ gpst process track.fit -o ./track.gpx -y --fix-elevation ./dem/*.asc --dem-crs EPSG:2180`
+
+[![Elevation Fix](./docs/images/elevation_fix_report.png)](./docs/images/elevation_fix_report.png)
+
 
 ### gpst plot
 
@@ -62,7 +77,7 @@ Example DEM coordinate reference systems:
 
 ```
 $ gpst plot -h
-usage: gpst plot [-h] -x X_AXIS -y Y_AXIS [Y_AXIS ...] [--y-right Y_AXIS_RIGHT [Y_AXIS_RIGHT ...]] [-t {line,scatter}] [--type-right {line,scatter}] [-o OUTPUT] FILE
+usage: gpst plot [-h] -x X_AXIS -y Y_AXIS [Y_AXIS ...] [--y-right Y_AXIS_RIGHT [Y_AXIS_RIGHT ...]] [-t {line,scatter}] [--type-right {line,scatter}] [--width WIDTH] [--height HEIGHT] [-o OUTPUT] FILE
 
 positional arguments:
   FILE                  Path to input file (.gpx or .fit).
@@ -78,15 +93,44 @@ options:
                         Plot type: line, scatter. Default is line.
   --type-right {line,scatter}
                         Plot type for right y-axis: line, scatter. Default is line.
+  --width WIDTH         Width of the output image in pixels (default: 2048).
+  --height HEIGHT       Height of the output image in pixels (default: 1024).
   -o, --output OUTPUT   Path to the output image file. If not provided, shows the plot interactively.
 ```
 
+Example:
 
-## Future Improvements
+`$ gpst plot ./track.gpx --x-axis distance --y-axis grade --y-right elevation smooth_elevation -o plot.png --width 1024 --height 512`
 
-- [ ] --fix-elevation option for process tool
-- [ ] configurable elevation smoothing window
-- [ ] configurable grade window
+[![Plot](./docs/images/plot.png)](./docs/images/plot.png)
+
+### gpst map
+
+**Note:** map tool does not calculate additional fields, to use calculated fields with FIT file, convert with process tool to GPX first
+
+```
+$ gpst map -h
+usage: gpst map [-h] [--dem DEM_FILE [DEM_FILE ...]] [--dem-crs DEM_CRS] [--width WIDTH] [--height HEIGHT] [-o OUTPUT] FILE
+
+positional arguments:
+  FILE                  Path to input file (.gpx or .fit).
+
+options:
+  -h, --help            show this help message and exit
+  --dem DEM_FILE [DEM_FILE ...]
+                        DEM files to use as background elevation data.
+  --dem-crs DEM_CRS     Coordinate reference system of the DEM files to be used if no CRS is specified in the files themselves (e.g. 'EPSG:4326').
+  --width WIDTH         Width of the output image in pixels (default: 4096).
+  --height HEIGHT       Height of the output image in pixels (default: 4096).
+  -o, --output OUTPUT   Path to the output image file. If not provided, shows the map interactively.
+(venv) [neri@ikar gpst]$ 
+```
+
+Example:
+
+`$ gpst map ./track.gpx --dem ./dem/*.asc --dem-crs EPSG:2180 -o map.png --width 1024 --height 1024`
+
+[![Map](./docs/images/map.png)](./docs/images/map.png)
 
 
 ## Limitations
