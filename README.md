@@ -70,6 +70,19 @@ When `--fix-elevation` is in use, tool produces report in form of csv file and p
 
 [![Elevation Fix](./docs/images/elevation_fix_report.png)](./docs/images/elevation_fix_report.png)
 
+<details>
+<summary>Elevation Plot without and with --fix-elevation</summary>
+
+**No fix**
+
+[![Plot](./docs/images/plot_nofix.png)](./docs/images/plot_nofix.png)
+
+**With fix**
+
+[![Plot](./docs/images/plot.png)](./docs/images/plot.png)
+
+</details>
+
 
 ### gpst plot
 
