@@ -78,6 +78,13 @@ options:
 ```
 
 
+## Future Improvements
+
+- [ ] --fix-elevation option for process tool
+- [ ] configurable elevation smoothing window
+- [ ] configurable grade window
+
+
 ## Limitations
 
 - GPX rte and wpt (and FIT equivalents) are ignored
