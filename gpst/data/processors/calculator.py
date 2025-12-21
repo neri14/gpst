@@ -386,6 +386,55 @@ def _calculate_grade(track: Track) -> Track:
     return track
 
 
+def _calculate_ascent_descent(track: Track) -> Track:
+    """Calculate total_ascent, total_descent, avg_vam metadata."""
+
+    logger.debug("Calculating total ascent, total descent and avg_vam...")
+    if 'total_ascent' in track.metadata and 'total_descent' in track.metadata and 'avg_vam' in track.metadata:
+        logger.debug("Ascent/descent/vam metadata already present. Skipping calculation.")
+        return track
+
+    total_ascent: float = 0.0
+    total_descent: float = 0.0
+    time_ascending: timedelta = timedelta(0)
+
+    last_ts: datetime | None = None
+    last_elevation: float | None = None
+
+    for ts, point in track.points_iter:
+        elevation = point.get('smooth_elevation')
+        distance = point.get('distance')
+
+        if not isinstance(elevation, (int, float)) or not isinstance(distance, (int, float)):
+            logger.error(f"Point at {to_string(ts)} missing elevation or distance cancelling ascent/descent calculation.")
+            return track
+
+        if last_elevation is not None and last_ts is not None:
+            delta_elev = elevation - last_elevation
+
+            if delta_elev > 0:
+                # ascending
+                total_ascent += delta_elev
+                time_ascending += ((ts - last_ts) if last_ts else timedelta(0))
+            elif delta_elev < 0:
+                total_descent += abs(delta_elev)
+
+        last_ts = ts
+        last_elevation = elevation
+
+    avg_vam = (total_ascent / time_ascending.total_seconds()) if time_ascending.total_seconds() > 0 else 0.0
+
+    logger.info(f"Total ascent calculated: {total_ascent} meters.")
+    logger.info(f"Total descent calculated: {total_descent} meters.")
+    logger.info(f"Average VAM calculated: {avg_vam} m/s.")
+
+    track.set_metadata('total_ascent', total_ascent)
+    track.set_metadata('total_descent', total_descent)
+    track.set_metadata('avg_vam', avg_vam)
+
+    return track
+
+
 def _calculate_misc(track: Track) -> Track:
     """Calculate miscellaneous metadata like jump_count."""
 
@@ -413,6 +462,7 @@ def calculate_additional_data(track: Track) -> Track:
     track = _calculate_power_averages(track) # fields: power3s, power10s, power30s
     track = _calculate_smooth_elevation(track) # fields: smooth_elevation
     track = _calculate_grade(track)
+    track = _calculate_ascent_descent(track) # metadata: total_ascent, total_descent, avg_vam
     track = _calculate_misc(track) # metadata: jump_count
 
     return track
