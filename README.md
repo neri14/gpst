@@ -9,21 +9,6 @@
 **GPS Tools** - A collection of tools to work with GPS track files.
 
 
-## Limitations
-
-- GPX rte and wpt (and FIT equivalents) are ignored
-- track and segment split in GPX (and FIT equivalents) are ignored
-- GPX 1.0 is not supported (yet)
-- unsupported fields are not preserved (see [list of supported Fields](./FIELDS.md))
-
-- following GPX extensions are utilized for working with GPX files:
-  - http://www.garmin.com/xmlschemas/TrackPointExtension/v1
-  - http://www.garmin.com/xmlschemas/TrackPointExtension/v2
-  - http://www.garmin.com/xmlschemas/GpxExtensions/v2
-  - http://www.garmin.com/xmlschemas/GpxExtensions/v3
-  - http://www.n3r1.com/xmlschemas/ActivityDataExtensions/v1
-
-
 ## Example Usage
 
 **convert .fit file to .gpx file**
@@ -69,6 +54,8 @@ options:
 
 ### gpst plot
 
+**Note:** plot tool does not calculate additional fields, to use calculated fields with FIT file, convert with process tool to GPX first
+
 ```
 $ gpst plot -h
 usage: gpst plot [-h] -x X_AXIS -y Y_AXIS [Y_AXIS ...] [--y-right Y_AXIS_RIGHT [Y_AXIS_RIGHT ...]] [-t {line,scatter}] [--type-right {line,scatter}] [-o OUTPUT] FILE
@@ -87,5 +74,20 @@ options:
                         Plot type: line, scatter. Default is line.
   --type-right {line,scatter}
                         Plot type for right y-axis: line, scatter. Default is line.
-  -o, --output OUTPUT   Path to the output image file. If not provided, shows the plot interactively
+  -o, --output OUTPUT   Path to the output image file. If not provided, shows the plot interactively.
 ```
+
+
+## Limitations
+
+- GPX rte and wpt (and FIT equivalents) are ignored
+- track and segment split in GPX (and FIT equivalents) are ignored
+- GPX 1.0 is not supported (yet)
+- unsupported fields are not preserved (see [list of supported Fields](./FIELDS.md))
+
+- following GPX extensions are utilized for working with GPX files:
+  - http://www.garmin.com/xmlschemas/TrackPointExtension/v1
+  - http://www.garmin.com/xmlschemas/TrackPointExtension/v2
+  - http://www.garmin.com/xmlschemas/GpxExtensions/v2
+  - http://www.garmin.com/xmlschemas/GpxExtensions/v3
+  - http://www.n3r1.com/xmlschemas/ActivityDataExtensions/v1
