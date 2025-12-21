@@ -157,10 +157,15 @@ class GpxWriter(Writer):
             ET.SubElement(trk_adx, f"{tag.adx}jumps").text = str(track.metadata['jump_count'])
 
         if 'avg_heart_rate' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}avghr").text = str(track.metadata['avg_heart_rate'])
+            val = track.metadata['avg_heart_rate']
+            if isinstance(val, float):
+                val = round(val)
+            ET.SubElement(trk_adx, f"{tag.adx}avghr").text = str(val)
         if 'max_heart_rate' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}maxhr").text = str(track.metadata['max_heart_rate'])
-
+            val = track.metadata['max_heart_rate']
+            if isinstance(val, float):
+                val = round(val)
+            ET.SubElement(trk_adx, f"{tag.adx}maxhr").text = str(val)
         if 'avg_cadence' in track.metadata:
             ET.SubElement(trk_adx, f"{tag.adx}avgcad").text = str(track.metadata['avg_cadence'])
         if 'max_cadence' in track.metadata:
@@ -212,7 +217,10 @@ class GpxWriter(Writer):
         if 'temperature' in data:
             ET.SubElement(trkpt_tpx, f"{tag.tpx}atemp").text = str(data['temperature'])
         if 'heart_rate' in data:
-            ET.SubElement(trkpt_tpx, f"{tag.tpx}hr").text = str(data['heart_rate'])
+            val = data['heart_rate']
+            if isinstance(val, float):
+                val = round(val)
+            ET.SubElement(trkpt_tpx, f"{tag.tpx}hr").text = str(val)
         if 'cadence' in data:
             ET.SubElement(trkpt_tpx, f"{tag.tpx}cad").text = str(data['cadence'])
         if 'speed' in data:
