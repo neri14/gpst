@@ -2,7 +2,7 @@ import argparse
 
 from pathlib import Path
 
-from ..data.processors import calculate_additional_data
+from ..data.processors import calculate_additional_data, fix_elevation
 from ..data.load_track import load_track
 from ..data.save_track import save_track
 from ._tool_descriptor import Tool
@@ -10,7 +10,7 @@ from ._common import verify_in_path, verify_out_path
 from ..utils.logger import logger
 
 
-def main(in_path: Path, out_path: Path, accept: bool) -> bool:
+def main(in_path: Path, out_path: Path, dem_files: list[Path] | None, dem_crs: str | None, accept: bool) -> bool:
     if not verify_in_path(in_path):
         return False
     if not verify_out_path(out_path, accept):
@@ -23,10 +23,9 @@ def main(in_path: Path, out_path: Path, accept: bool) -> bool:
         logger.error(f"Failed to load track from '{in_path}'.")
         return False
 
-    # return True#FIXME remove
-
-    #TODO if fix elevation - fix it here and remove all fields related to elevation
-
+    if dem_files is not None and len(dem_files) > 0:
+        logger.info("Fixing elevation data...")
+        track = fix_elevation(track, dem_files, dem_crs, report_basepath=out_path.with_suffix(''))
 
     logger.info("Calculating additional data...")
     track = calculate_additional_data(track)
@@ -67,14 +66,21 @@ def add_argparser(subparsers: argparse._SubParsersAction) -> None:
         dest="accept",
         help="Accept questions (e.g. overwrite existing output file).",
     )
-    # parser.add_argument(
-    #     "--fix-elevation",
-    #     nargs="+",
-    #     dest="dem_files",
-    #     type=str,
-    #     metavar="DEM_FILE",
-    #     help="Correct elevation data using DEM files.",
-    # )
+    parser.add_argument(
+        "--fix-elevation",
+        nargs="+",
+        dest="dem_files",
+        type=Path,
+        metavar="DEM_FILE",
+        help="Correct elevation data using DEM files.",
+    )
+    parser.add_argument(
+        "--dem-crs",
+        dest="dem_crs",
+        type=str,
+        metavar="DEM_CRS",
+        help="Coordinate reference system of the DEM files to be used if no CRS is specified in the files themselves (e.g. 'EPSG:4326').",
+    )
 
 
 tool = Tool(

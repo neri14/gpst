@@ -51,6 +51,10 @@ options:
   -y, --yes             Accept questions (e.g. overwrite existing output file).
 ```
 
+Example DEM coordinate reference systems:
+
+- PL-KRON86-NH -> 'EPSG:2180'
+- PL-EVRF2007-NH -> 'EPSG:9651'
 
 ### gpst plot
 

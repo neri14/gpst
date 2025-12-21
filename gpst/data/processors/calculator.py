@@ -346,24 +346,28 @@ def _calculate_grade(track: Track) -> Track:
                 logger.trace(f"Point at {to_string(ts)} missing {dist_key} or {alt_key} for grade calculation. Skipping.")
                 continue
 
-            altitudes = [(p[dist_key], p[alt_key]) for p in window if alt_key in p and dist_key in p]
-            z1,y1 = altitudes[0]
-            z2,y2 = altitudes[-1]
+            try:
+                altitudes = [(p[dist_key], p[alt_key]) for p in window if alt_key in p and dist_key in p]
+                z1,y1 = altitudes[0]
+                z2,y2 = altitudes[-1]
 
-            if dist - z1 < MIN_GRADE_WINDOW/2:
-                continue # don't calculate grade - covers beginning of activity
-            if z2 - dist < MIN_GRADE_WINDOW/2:
-                continue # don't calculate grade - covers end of activity
+                if dist - z1 < MIN_GRADE_WINDOW/2:
+                    continue # don't calculate grade - covers beginning of activity
+                if z2 - dist < MIN_GRADE_WINDOW/2:
+                    continue # don't calculate grade - covers end of activity
 
-            z = z2 - z1
-            y = y2 - y1
+                z = z2 - z1
+                y = y2 - y1
 
-            x = math.sqrt(z**2 - y**2) # pythagoras (x**2 + y**2 = z**2 where z is distance delta and y is altitude delta)
+                x = math.sqrt(z**2 - y**2) # pythagoras (x**2 + y**2 = z**2 where z is distance delta and y is altitude delta)
 
-            grade = (y / x) * 100.0
-            point['grade'] = grade
-            n += 1
-            logger.trace(f"Setting grade for point at {to_string(ts)} to {grade} %")
+                grade = (y / x) * 100.0
+                point['grade'] = grade
+                n += 1
+                logger.trace(f"Setting grade for point at {to_string(ts)} to {grade} %")
+            except Exception as e:
+                logger.warning(f"Failed to calculate grade for point at {to_string(ts)}: {e}")
+                continue
 
         if max_grade is None or grade > max_grade:
             max_grade = grade
