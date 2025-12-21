@@ -30,6 +30,8 @@ converted_units = {
 
 LINE_WIDTH = 1
 POINT_SIZE = 3
+DEFAULT_WIDTH = 2048
+DEFAULT_HEIGHT = 1024
 
 
 def label(field: str) -> str:
@@ -60,8 +62,9 @@ def read_data(path: Path, x_axis: str, y_axis: list[str], y_axis_right: list[str
         if x_axis not in point:
             logger.warning(f"X-axis field '{x_axis}' not found in point at {timestamp}. Skipping.")
             continue
-
-        xpoints.append(point[x_axis])
+        
+        x_factor = conversion_factors.get(x_axis, 1)
+        xpoints.append(point[x_axis] * x_factor)
 
         for y in y_axis:
             factor = conversion_factors.get(y, 1)
@@ -101,8 +104,10 @@ def colors() -> Generator[ColorType, None, None]:
 def draw_plot(plot_type: str, plot_type_right: str, activity_name: str,
               x_axis: str, y_axis: list[str], y_axis_right: list[str],
               xpoints: list, ypoints: dict, ypoints_right: dict,
+              width: int, height: int,
               output: str|None) -> None:
-    fig, ax1 = plt.subplots()
+    px = 1/plt.rcParams['figure.dpi']
+    fig, ax1 = plt.subplots(figsize=(width*px, height*px))
     color = colors()
 
     if plot_type == 'line':
@@ -133,14 +138,17 @@ def draw_plot(plot_type: str, plot_type_right: str, activity_name: str,
     ax1.grid(True)
 
     if output:
+        logger.info(f"Saving plot to '{output}'...")
         plt.savefig(output)
     else:
+        logger.info("Displaying plot...")
         plt.show()
 
 
 def main(path: Path,
          x_axis: str, y_axis: list[str], y_axis_right: list[str] = [],
          plot_type: str = 'line', plot_type_right: str = 'line',
+         width: int = DEFAULT_WIDTH, height: int = DEFAULT_HEIGHT,
          output: str|None = None) -> bool:
     logger.info(f"Plotting file: {path}")
 
@@ -155,7 +163,10 @@ def main(path: Path,
         data = read_data(path, x_axis, y_axis, y_axis_right)
         if data is not None:
             activity_name, xpoints, ypoints, ypoints_right = data
-            draw_plot(plot_type, plot_type_right, activity_name, x_axis, y_axis, y_axis_right, xpoints, ypoints, ypoints_right, output)
+            draw_plot(plot_type, plot_type_right,
+                      activity_name, x_axis, y_axis, y_axis_right,
+                      xpoints, ypoints, ypoints_right,
+                      width, height, output)
     except Exception as e:
         logger.error(f"Failed to plot data: {e}")
         return False
@@ -207,6 +218,20 @@ def add_argparser(subparsers: argparse._SubParsersAction) -> None:
         help="Plot type for right y-axis: line, scatter. Default is line.",
         choices=["line", "scatter"],
         default="line"
+    )
+    parser.add_argument(
+        "--width",
+        dest="width",
+        type=int,
+        help=f"Width of the output image in pixels (default: {DEFAULT_WIDTH}).",
+        default=DEFAULT_WIDTH
+    )
+    parser.add_argument(
+        "--height",
+        dest="height",
+        type=int,
+        help=f"Height of the output image in pixels (default: {DEFAULT_HEIGHT}).",
+        default=DEFAULT_HEIGHT
     )
     parser.add_argument(
         "-o", "--output",

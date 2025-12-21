@@ -8,7 +8,7 @@ from ..track import Track, Value, latitude_t, longitude_t
 from ...utils.logger import logger
 
 
-SMOOTH_ELEVATION_WINDOW = 5 # seconds
+SMOOTH_ELEVATION_WINDOW = 100 # meters
 MAX_GRADE_WINDOW = 50 # meters
 MIN_GRADE_WINDOW = 20 # meters
 
@@ -308,7 +308,7 @@ def _calculate_smooth_elevation(track: Track) -> Track:
 
     n: int = 0
 
-    for ts, point, window in track.sliding_window_iter(key='time', size=SMOOTH_ELEVATION_WINDOW):
+    for ts, point, window in track.sliding_window_iter(key='distance', size=SMOOTH_ELEVATION_WINDOW):
         if 'smooth_elevation' not in point:
             elevs = [p['elevation'] for p in window if 'elevation' in p and isinstance(p['elevation'], (int, float))]
             if len(elevs) > 0:
