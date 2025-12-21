@@ -64,7 +64,10 @@ def read_data(path: Path, x_axis: str, y_axis: list[str], y_axis_right: list[str
             continue
         
         x_factor = conversion_factors.get(x_axis, 1)
-        xpoints.append(point[x_axis] * x_factor)
+        x_value = point[x_axis]
+        if isinstance(x_value, (int, float)):
+            x_value = x_value * x_factor
+        xpoints.append(x_value)
 
         for y in y_axis:
             factor = conversion_factors.get(y, 1)
