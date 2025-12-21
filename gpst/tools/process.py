@@ -23,6 +23,7 @@ def main(in_path: Path, out_path: Path, accept: bool) -> bool:
         logger.error(f"Failed to load track from '{in_path}'.")
         return False
 
+    # return True#FIXME remove
 
     #TODO if fix elevation - fix it here and remove all fields related to elevation
 

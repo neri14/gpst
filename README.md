@@ -9,9 +9,22 @@
 **GPS Tools** - A collection of tools to work with GPS track files.
 
 
-## Note
+## Limitations
 
-GPX input not yet supported.
+- GPX rte and wpt (and FIT equivalents) are not supported
+
+- does not support GPX 1.0 only 1.1
+
+- mostly suppots gpx extensions:
+  - http://www.garmin.com/xmlschemas/TrackPointExtension/v1
+  - http://www.garmin.com/xmlschemas/TrackPointExtension/v2
+  - http://www.garmin.com/xmlschemas/GpxExtensions/v2
+  - http://www.garmin.com/xmlschemas/GpxExtensions/v3
+  - http://www.n3r1.com/xmlschemas/ActivityDataExtensions/v1
+
+- does not preserve unsupported fields(!), see [list of supported Fields](./FIELDS.md)
+
+- supports single track and single track segment GPX files (and FIT equivalents)
 
 
 ## Example Usage
