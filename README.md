@@ -27,7 +27,7 @@ GPS Tools - A collection of tools to work with GPS track files.
 positional arguments:
   tool        Available tools:
     map       Draw map of input file.
-    plot      Plot data from the input file.
+    plot      Plot data from the fit file.
     process   Process GPS track file and write results to a GPX file.
 
 options:
@@ -123,7 +123,8 @@ Example:
 
 ```
 $ gpst map -h
-usage: gpst map [-h] [--dem DEM_FILE [DEM_FILE ...]] [--dem-crs DEM_CRS] [--width WIDTH] [--height HEIGHT] [-o OUTPUT] FILE
+usage: gpst map [-h] [--dem DEM_FILE [DEM_FILE ...]] [--dem-crs DEM_CRS] [--width WIDTH] [--height HEIGHT] [--line-width LINE_WIDTH] [-o OUTPUT] [--show-title] [--trim {tight,box}]
+                FILE
 
 positional arguments:
   FILE                  Path to input file (.gpx or .fit).
@@ -135,13 +136,16 @@ options:
   --dem-crs DEM_CRS     Coordinate reference system of the DEM files to be used if no CRS is specified in the files themselves (e.g. 'EPSG:4326').
   --width WIDTH         Width of the output image in pixels (default: 4096).
   --height HEIGHT       Height of the output image in pixels (default: 4096).
+  --line-width LINE_WIDTH
+                        Width of the track line (default: 2.5).
   -o, --output OUTPUT   Path to the output image file. If not provided, shows the map interactively.
-(venv) [neri@ikar gpst]$ 
+  --show-title          Show the activity name as the title of the map.
+  --trim {tight,box}    Trim the map to the track bounds.
 ```
 
 Example:
 
-`$ gpst map ./track.gpx --dem ./dem/*.asc --dem-crs EPSG:2180 -o map.png --width 1024 --height 1024`
+`$ gpst map ./track.gpx --dem ./dem/*.asc --dem-crs EPSG:2180 -o map.png --width 1024 --height 1024 --trim box --line-width 1`
 
 [![Map](./docs/images/map.png)](./docs/images/map.png)
 

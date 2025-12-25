@@ -3,6 +3,7 @@ import rasterio # type: ignore[import-untyped]
 
 import matplotlib.pyplot as plt
 
+from enum import StrEnum
 from pathlib import Path
 from rasterio.merge import merge # type: ignore[import-untyped]
 from rasterio.warp import transform # type: ignore[import-untyped]
@@ -19,13 +20,55 @@ DEFAULT_WIDTH = 4096
 DEFAULT_HEIGHT = 4096
 
 
-def main(path: Path, dem_files: list[Path] | None = None, dem_crs: str | None = None,
-         output: Path | None = None, width: int = DEFAULT_WIDTH, height: int = DEFAULT_HEIGHT) -> bool:
+class TrimMode(StrEnum):
+    TIGHT = 'tight'
+    BOX = 'box'
+
+
+def _get_track_bounds(track_x: list[float | None], track_y: list[float | None], trim: TrimMode) -> tuple[float, float, float, float] | None:
+    valid_x = [x for x in track_x if x is not None]
+    valid_y = [y for y in track_y if y is not None]
+    if valid_x and valid_y:
+        minx, maxx = min(valid_x), max(valid_x)
+        miny, maxy = min(valid_y), max(valid_y)
+
+        dx = maxx - minx
+        dy = maxy - miny
+
+        if trim == TrimMode.BOX:
+            dmax = max(dx, dy)
+            midx, midy = (minx + maxx) / 2, (miny + maxy) / 2
+            minx, maxx = midx - dmax / 2, midx + dmax / 2
+            miny, maxy = midy - dmax / 2, midy + dmax / 2
+            dx = dy = dmax
+
+        if dx == 0:
+            dx = 1
+        if dy == 0:
+            dy = 1
+        
+        padding = max(dx, dy) * 0.05
+
+        left = minx - padding
+        right = maxx + padding
+        bottom = miny - padding
+        top = maxy + padding
+
+        return left, right, bottom, top
+    return None
+
+
+def main(path: Path, dem_files: list[Path] | None = None, dem_crs: str | None = None, output: Path | None = None,
+         width: int = DEFAULT_WIDTH, height: int = DEFAULT_HEIGHT, line_width: float = 2.5,
+         show_title: bool = False, trim: TrimMode | None = None) -> bool:
     if not verify_in_path(path):
         return False
 
     px = 1/plt.rcParams['figure.dpi']
     fig, ax = plt.subplots(figsize=(width*px, height*px))
+
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    ax.set_axis_off()
 
     crs = rasterio.CRS({'init': dem_crs if dem_crs is not None else DEFAULT_CRS}) 
 
@@ -76,7 +119,14 @@ def main(path: Path, dem_files: list[Path] | None = None, dem_crs: str | None = 
     if track is None:
         logger.error(f"Failed to load track from '{path}'.")
     else:
-        ax.set_title(str(track.metadata.get('name', 'Unknown Activity')))
+        if show_title:
+            title = str(track.metadata.get('name', 'Unknown Activity'))
+            ax.text(0.5, 1, title,
+                    transform=ax.transAxes,
+                    ha='center', va='top',
+                    fontsize=20, color='black',
+                    zorder=20
+            )
 
         track_x: list = []
         track_y: list = []
@@ -95,16 +145,22 @@ def main(path: Path, dem_files: list[Path] | None = None, dem_crs: str | None = 
                 track_y.append(ys[0])
 
         logger.info("Plotting track...")
-        ax.plot(track_x, track_y, color='red', linewidth=1.5, alpha=0.8, zorder=10)
+        ax.plot(track_x, track_y, color='red', linewidth=line_width, alpha=0.8, zorder=10)
+
+        if trim is not None:
+            bounds = _get_track_bounds(track_x, track_y, trim)
+            if bounds is not None:
+                left, right, bottom, top = bounds
+                ax.set_xlim(left, right)
+                ax.set_ylim(bottom, top)
 
         # If no DEM is present, ensure the plot has a reasonable aspect ratio
         if not dem_files:
             ax.set_aspect('equal')
-            ax.grid(True)
 
     if output:
         logger.info(f"Saving map to '{output}'...")
-        plt.savefig(output)
+        plt.savefig(output, bbox_inches='tight', pad_inches=0, dpi=plt.rcParams['figure.dpi'])
     else:
         logger.info("Displaying map...")
         plt.show()
@@ -153,10 +209,32 @@ def add_argparser(subparsers: argparse._SubParsersAction) -> None:
         default=DEFAULT_HEIGHT
     )
     parser.add_argument(
+        "--line-width",
+        dest="line_width",
+        type=float,
+        help="Width of the track line (default: 2.5).",
+        default=2.5
+    )
+    parser.add_argument(
         "-o", "--output",
         dest="output",
         type=Path,
         help="Path to the output image file. If not provided, shows the map interactively.",
+        default=None
+    )
+    parser.add_argument(
+        "--show-title",
+        dest="show_title",
+        action="store_true",
+        help="Show the activity name as the title of the map.",
+        default=False
+    )
+    parser.add_argument(
+        "--trim",
+        dest="trim",
+        help="Trim the map to the track bounds.",
+        type=TrimMode,
+        choices=[TrimMode.TIGHT, TrimMode.BOX],
         default=None
     )
 
