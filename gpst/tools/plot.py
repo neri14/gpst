@@ -180,7 +180,7 @@ def main(path: Path,
 def add_argparser(subparsers: argparse._SubParsersAction) -> None:
     parser = subparsers.add_parser(
         "plot",
-        help="Plot data from the fit file."
+        help="Plot data from the input file."
     )
     parser.add_argument(
         "path",
@@ -245,7 +245,7 @@ def add_argparser(subparsers: argparse._SubParsersAction) -> None:
 
 tool = Tool(
     name="plot",
-    description="Plot data from the fit file.",
+    description="Plot data from the input file.",
     add_argparser=add_argparser,
     main=main
 )
