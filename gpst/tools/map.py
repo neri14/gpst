@@ -20,12 +20,16 @@ DEFAULT_HEIGHT = 4096
 
 
 def main(path: Path, dem_files: list[Path] | None = None, dem_crs: str | None = None,
-         output: Path | None = None, width: int = DEFAULT_WIDTH, height: int = DEFAULT_HEIGHT) -> bool:
+         output: Path | None = None, width: int = DEFAULT_WIDTH, height: int = DEFAULT_HEIGHT,
+         show_title: bool = False) -> bool:
     if not verify_in_path(path):
         return False
 
     px = 1/plt.rcParams['figure.dpi']
     fig, ax = plt.subplots(figsize=(width*px, height*px))
+
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    ax.set_axis_off()
 
     crs = rasterio.CRS({'init': dem_crs if dem_crs is not None else DEFAULT_CRS}) 
 
@@ -76,7 +80,14 @@ def main(path: Path, dem_files: list[Path] | None = None, dem_crs: str | None = 
     if track is None:
         logger.error(f"Failed to load track from '{path}'.")
     else:
-        ax.set_title(str(track.metadata.get('name', 'Unknown Activity')))
+        if show_title:
+            title = str(track.metadata.get('name', 'Unknown Activity'))
+            ax.text(0.5, 1, title,
+                    transform=ax.transAxes,
+                    ha='center', va='top',
+                    fontsize=20, color='black',
+                    zorder=20
+            )
 
         track_x: list = []
         track_y: list = []
@@ -100,11 +111,10 @@ def main(path: Path, dem_files: list[Path] | None = None, dem_crs: str | None = 
         # If no DEM is present, ensure the plot has a reasonable aspect ratio
         if not dem_files:
             ax.set_aspect('equal')
-            ax.grid(True)
 
     if output:
         logger.info(f"Saving map to '{output}'...")
-        plt.savefig(output)
+        plt.savefig(output, bbox_inches='tight', pad_inches=0, dpi=plt.rcParams['figure.dpi'])
     else:
         logger.info("Displaying map...")
         plt.show()
@@ -158,6 +168,13 @@ def add_argparser(subparsers: argparse._SubParsersAction) -> None:
         type=Path,
         help="Path to the output image file. If not provided, shows the map interactively.",
         default=None
+    )
+    parser.add_argument(
+        "--show-title",
+        dest="show_title",
+        action="store_true",
+        help="Show the activity name as the title of the map.",
+        default=False
     )
 
 tool = Tool(
