@@ -27,7 +27,7 @@ GPS Tools - A collection of tools to work with GPS track files.
 positional arguments:
   tool        Available tools:
     map       Draw map of input file.
-    plot      Plot data from the fit file.
+    plot      Plot data from the input file.
     process   Process GPS track file and write results to a GPX file.
 
 options:
