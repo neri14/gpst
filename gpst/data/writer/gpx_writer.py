@@ -16,18 +16,21 @@ namespace_urls = {
     'xsi': "http://www.w3.org/2001/XMLSchema-instance",
     'tpx': "http://www.garmin.com/xmlschemas/TrackPointExtension/v2",
     'adx': "http://www.n3r1.com/xmlschemas/ActivityDataExtensions/v1",
+    'asx': "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensions/v1"
 }
 
 namespace_schemas = {
     '': "http://www.topografix.com/GPX/1/1/gpx.xsd",
     'tpx': "http://www.garmin.com/xmlschemas/TrackPointExtensionv2.xsd",
     'adx': "http://www.n3r1.com/xmlschemas/ActivityDataExtensionsv1.xsd",
+    'asx': "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensionsv1.xsd"
 }
 
 tag = SimpleNamespace(
     gpx="{" + namespace_urls[''] + "}",
     tpx="{" + namespace_urls['tpx'] + "}",
     adx="{" + namespace_urls['adx'] + "}",
+    asx="{" + namespace_urls['asx'] + "}",
 )
 
 
@@ -95,8 +98,17 @@ class GpxWriter(Writer):
 
     def _create_trk_extensions(self, trk: ET.Element, track: Track) -> ET.Element:
         trk_ext = ET.SubElement(trk, f"{tag.gpx}extensions")
+        trk_adx = self._create_trk_adx_extension(trk_ext, track)
+
+        if len(track.segments) > 0:
+            trk_asx = self._create_trk_asx_extension(trk_ext, track)
+
+        return trk_ext
+    
+
+    def _create_trk_adx_extension(self, trk_ext: ET.Element, track: Track) -> ET.Element:
         trk_adx = ET.SubElement(trk_ext, f"{tag.adx}ActivityTrackExtension")
-        
+ 
         if 'total_elapsed_time' in track.metadata:
             ET.SubElement(trk_adx, f"{tag.adx}elapsedtime").text = str(track.metadata['total_elapsed_time'])
         if 'total_timer_time' in track.metadata:
@@ -178,7 +190,124 @@ class GpxWriter(Writer):
         if 'min_temperature' in track.metadata:
             ET.SubElement(trk_adx, f"{tag.adx}minatemp").text = str(track.metadata['min_temperature'])
 
-        return trk_ext
+        return trk_adx
+
+
+    def _create_trk_asx_extension(self, trk_ext: ET.Element, track: Track) -> ET.Element:
+        trk_asx = ET.SubElement(trk_ext, f"{tag.asx}ActivitySegmentsExtension")
+
+        for ts, segment in track.segments_iter:
+            trk_seg = ET.SubElement(trk_asx, f"{tag.asx}segment")
+
+            if 'name' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}name").text = str(segment['name'])
+            if 'type' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}type").text = str(segment['type'])
+            if 'source' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}source").text = str(segment['source'])
+            
+            if 'start_time' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}starttime").text = to_string(segment['start_time'])
+            if 'end_time' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}endtime").text = to_string(segment['end_time'])
+
+            if 'start_timer' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}starttimer").text = str(segment['start_timer'])
+            if 'end_timer' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}endtimer").text = str(segment['end_timer'])
+
+            if 'start_distance' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}startdist").text = str(segment['start_distance'])
+            if 'end_distance' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}enddist").text = str(segment['end_distance'])
+
+            if 'start_elevation' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}startele").text = str(segment['start_elevation'])
+            if 'end_elevation' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}endele").text = str(segment['end_elevation'])
+
+            if 'start_latitude' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}startlat").text = str(segment['start_latitude'])
+            if 'start_longitude' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}startlon").text = str(segment['start_longitude'])
+            if 'end_latitude' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}endlat").text = str(segment['end_latitude'])
+            if 'end_longitude' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}endlon").text = str(segment['end_longitude'])
+
+            if 'minlat' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}minlat").text = str(segment['minlat'])
+            if 'minlon' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}minlon").text = str(segment['minlon'])
+            if 'maxlat' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}maxlat").text = str(segment['maxlat'])
+            if 'maxlon' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}maxlon").text = str(segment['maxlon'])
+
+            if 'total_elapsed_time' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}elapsedtime").text = str(segment['total_elapsed_time'])
+            if 'total_timer_time' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}timertime").text = str(segment['total_timer_time'])
+            if 'total_distance' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}distance").text = str(segment['total_distance'])
+            if 'total_ascent' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}ascent").text = str(segment['total_ascent'])
+            if 'total_descent' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}descent").text = str(segment['total_descent'])
+
+            if 'avg_grade' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}avggrade").text = str(segment['avg_grade'])
+            if 'max_grade' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}maxgrade").text = str(segment['max_grade'])
+            if 'min_grade' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}mingrade").text = str(segment['min_grade'])
+
+            if 'avg_speed' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}avgspeed").text = str(segment['avg_speed'])
+            if 'max_speed' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}maxspeed").text = str(segment['max_speed'])
+
+            if 'avg_vam' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}avgvam").text = str(segment['avg_vam'])
+
+            if 'avg_power' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}avgpower").text = str(segment['avg_power'])
+            if 'max_power' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}maxpower").text = str(segment['max_power'])
+            if 'normalized_power' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}normpower").text = str(segment['normalized_power'])
+
+            if 'avg_heart_rate' in segment:
+                val = segment['avg_heart_rate']
+                if isinstance(val, float):
+                    val = round(val)
+                ET.SubElement(trk_seg, f"{tag.asx}avghr").text = str(val)
+            if 'max_heart_rate' in segment:
+                val = segment['max_heart_rate']
+                if isinstance(val, float):
+                    val = round(val)
+                ET.SubElement(trk_seg, f"{tag.asx}maxhr").text = str(val)
+
+            if 'avg_cadence' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}avgcad").text = str(segment['avg_cadence'])
+            if 'max_cadence' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}maxcad").text = str(segment['max_cadence'])
+
+            if 'total_cycles' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}cycles").text = str(segment['total_cycles'])
+            if 'total_strokes' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}strokes").text = str(segment['total_strokes'])
+            if 'total_work' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}work").text = str(segment['total_work'])
+            if 'total_calories' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}kcal").text = str(segment['total_calories'])
+
+            if 'total_grit' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}grit").text = str(segment['total_grit'])
+            if 'avg_flow' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}flow").text = str(segment['avg_flow'])
+
+        return trk_asx
 
 
     def _create_trkseg_element(self, trk: ET.Element, track: Track) -> ET.Element:
@@ -228,8 +357,8 @@ class GpxWriter(Writer):
 
         trkpt_adx = ET.SubElement(trkpt_ext, f"{tag.adx}ActivityTrackPointExtension")
 
-        if 'time' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}time").text = str(data['time'])
+        if 'timer' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}timer").text = str(data['timer'])
         if 'smooth_elevation' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}smoothele").text = str(data['smooth_elevation'])
         if 'distance' in data:

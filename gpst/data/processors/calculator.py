@@ -12,7 +12,7 @@ MIN_GRADE_WINDOW = 0.4 # 40% grade window
 
 
 def _calculate_times(track: Track) -> Track:
-    """Calculate start_time, end_time, total_elapsed_time metadata and time point field."""
+    """Calculate start_time, end_time, total_elapsed_time metadata and timer point field."""
 
     logger.debug("Calculating time for track points...")
     start_time: datetime | None = None
@@ -29,12 +29,12 @@ def _calculate_times(track: Track) -> Track:
 
         total_time = (ts - start_time).total_seconds() if start_time and ts else 0.0
 
-        if total_time is not None and 'time' not in point:
-            logger.trace(f"Setting time for point at {to_string(ts)} to {total_time} seconds")
-            point['time'] = total_time
+        if total_time is not None and 'timer' not in point:
+            logger.trace(f"Setting timer for point at {to_string(ts)} to {total_time} seconds")
+            point['timer'] = total_time
             n += 1
     
-    logger.debug(f"Calculated time for {n} points.")
+    logger.debug(f"Calculated timer for {n} points.")
     logger.debug("Setting calculated time metadata...")
 
     if start_time is not None and 'start_time' not in track.metadata:
@@ -169,10 +169,10 @@ def _calculate_speeds(track: Track) -> Track:
     n_t: int = 0
     for ts, point in track.points_iter:
         distance = point.get('distance')
-        time = point.get('time')
+        timer = point.get('timer')
 
-        if (isinstance(distance, (int, float)) and isinstance(time, (int, float))):
-            speed = (distance - last_distance) / (time - last_time) if (time - last_time) > 0 else 0.0
+        if (isinstance(distance, (int, float)) and isinstance(timer, (int, float))):
+            speed = (distance - last_distance) / (timer - last_time) if (timer - last_time) > 0 else 0.0
 
             point['track_speed'] = speed
             n_t += 1
@@ -190,7 +190,7 @@ def _calculate_speeds(track: Track) -> Track:
                     max_speed = spd
 
             last_distance = distance
-            last_time = time
+            last_time = timer
 
     logger.debug(f"Calculated speeds for {n} points and track speeds for {n_t} points.")
 
@@ -240,19 +240,19 @@ def _calculate_vspeeds(track: Track) -> Track:
     for ts, point in track.points_iter:
         if 'vertical_speed' not in point:
             elevation = point.get('elevation')
-            time = point.get('time')
+            timer = point.get('timer')
 
             if (isinstance(elevation, (int, float)) and
-                isinstance(time, (int, float))):
+                isinstance(timer, (int, float))):
 
                 if last_elevation is not None and last_time is not None:
-                    v_speed = (elevation - last_elevation) / (time - last_time) if (time - last_time) > 0 else 0.0
+                    v_speed = (elevation - last_elevation) / (timer - last_time) if (timer - last_time) > 0 else 0.0
                     point['vertical_speed'] = v_speed
                     n += 1
                     logger.trace(f"Setting vertical_speed for point at {to_string(ts)} to {v_speed} m/s")
 
                 last_elevation = elevation
-                last_time = time
+                last_time = timer
 
     logger.debug(f"Calculated vertical speeds for {n} points.")
     return track
@@ -453,8 +453,280 @@ def _calculate_misc(track: Track) -> Track:
     return track
 
 
+def _calculate_segments(track: Track) -> Track:
+    """Calculate missing segments metadata"""
+
+    logger.debug("Calculating segments")
+
+    for n,(_,segment) in enumerate(track.segments_iter):
+        logger.debug(f"Calculating segment {n}...")
+
+        start_ts = segment.get('start_time')
+        end_ts = segment.get('end_time')
+        if not isinstance(start_ts, datetime) or not isinstance(end_ts, datetime):
+            logger.warning(f"Segment {n} missing start_time or end_time. Skipping segment calculation.")
+            continue
+
+        # Initialize calculated fields
+        start_timer: float | None = None
+        end_timer: float | None = None
+
+        start_distance: float | None = None
+        end_distance: float | None = None
+
+        start_elevation: float | None = None
+        end_elevation: float | None = None
+
+        start_latitude: float | None = None
+        start_longitude: float | None = None
+        end_latitude: float | None = None
+        end_longitude: float | None = None
+
+        minlat: float | None = None
+        minlon: float | None = None
+        maxlat: float | None = None
+        maxlon: float | None = None
+
+        total_ascent: float = 0.0
+        total_descent: float = 0.0
+        time_ascending: timedelta = timedelta(0)
+
+        last_ts: datetime | None = None
+        last_elevation: float | None = None
+
+        max_grade = None
+        min_grade = None
+
+        max_speed = None
+
+        power_time_lst: list[tuple[float, timedelta]] = []
+        max_power = None
+        power30s_lst = []
+
+        cadences = []
+        heart_rates = []
+
+        for ts, point in track.points_iter:
+            if ts < start_ts:
+                continue
+            if ts > end_ts:
+                break
+
+            # Collect data for segment
+            timer = point.get('timer')
+            if isinstance(timer, (int, float)):
+                if start_timer is None:
+                    start_timer = timer
+                end_timer = timer
+
+            distance = point.get('distance')
+            if isinstance(distance, (int, float)):
+                if start_distance is None:
+                    start_distance = distance
+                end_distance = distance
+            
+            elevation = point.get('elevation')
+            if isinstance(elevation, (int, float)):
+                if start_elevation is None:
+                    start_elevation = elevation
+                end_elevation = elevation
+
+            latitude = point.get('latitude')
+            longitude = point.get('longitude')
+            if isinstance(latitude, (int, float)) and isinstance(longitude, (int, float)):
+                if start_latitude is None and start_longitude is None:
+                    start_latitude = latitude
+                    start_longitude = longitude
+                end_latitude = latitude
+                end_longitude = longitude
+
+                if minlat is None or latitude < minlat:
+                    minlat = latitude
+                if maxlat is None or latitude > maxlat:
+                    maxlat = latitude
+                if minlon is None or longitude < minlon:
+                    minlon = longitude
+                if maxlon is None or longitude > maxlon:
+                    maxlon = longitude
+
+            smooth_elevation = point.get('smooth_elevation')
+            if isinstance(smooth_elevation, (int, float)) and isinstance(distance, (int, float)):
+                if last_elevation is not None and last_ts is not None:
+                    delta_elev = smooth_elevation - last_elevation
+
+                    if delta_elev > 0:
+                        # ascending
+                        total_ascent += delta_elev
+                        time_ascending += ((ts - last_ts) if last_ts else timedelta(0))
+                    elif delta_elev < 0:
+                        total_descent += abs(delta_elev)
+
+            grade = point.get('grade')
+            if isinstance(grade, (int, float)):
+                if max_grade is None or grade > max_grade:
+                    max_grade = grade
+                if min_grade is None or grade < min_grade:
+                    min_grade = grade
+
+            speed = point.get('speed')
+            if isinstance(speed, (int, float)):
+                if max_speed is None or speed > max_speed:
+                    max_speed = speed
+
+            power = point.get('power')
+            if isinstance(power, (int, float)):
+                power_time_lst.append((power, (ts-last_ts) if last_ts else timedelta(0)))
+                if max_power is None or power > max_power:
+                    max_power = power
+
+            power30s = point.get('power30s')
+            if ts-start_ts >= timedelta(seconds=30) and isinstance(power30s, (int, float)):
+                power30s_lst.append(power30s)
+
+            heart_rate = point.get('heart_rate')
+            if isinstance(heart_rate, (int, float)):
+                heart_rates.append(heart_rate)
+
+            cadence = point.get('cadence')
+            if isinstance(cadence, (int, float)):
+                cadences.append(cadence)
+
+            last_ts = ts
+            last_elevation = smooth_elevation if isinstance(smooth_elevation, (int, float)) else last_elevation
+
+        # Set calculated segment fields if not already present
+        if isinstance(start_timer, (int, float)) and 'start_timer' not in segment:
+            segment['start_timer'] = start_timer
+            logger.trace(f"Segment {n}: start_timer set to {start_timer} seconds")
+        if isinstance(end_timer, (int, float)) and 'end_timer' not in segment:
+            segment['end_timer'] = end_timer
+            logger.trace(f"Segment {n}: end_timer set to {end_timer} seconds")
+        if isinstance(start_timer, (int, float)) and isinstance(end_timer, (int,float)) and 'total_elapsed_time' not in segment:
+            segment['total_elapsed_time'] = end_timer - start_timer
+            logger.trace(f"Segment {n}: total_elapsed_time set to {segment['total_elapsed_time']} seconds")
+
+        if isinstance(start_distance, (int, float)) and 'start_distance' not in segment:
+            segment['start_distance'] = start_distance
+            logger.trace(f"Segment {n}: start_distance set to {start_distance} meters")
+        if isinstance(end_distance, (int, float)) and 'end_distance' not in segment:
+            segment['end_distance'] = end_distance
+            logger.trace(f"Segment {n}: end_distance set to {end_distance} meters")
+        if isinstance(start_distance, (int, float)) and isinstance(end_distance, (int, float)) and 'total_distance' not in segment:
+            segment['total_distance'] = end_distance - start_distance
+            logger.trace(f"Segment {n}: total_distance set to {segment['total_distance']} meters")
+
+        if isinstance(start_elevation, (int, float)) and 'start_elevation' not in segment:
+            segment['start_elevation'] = start_elevation
+            logger.trace(f"Segment {n}: start_elevation set to {start_elevation} meters")
+        if isinstance(end_elevation, (int, float)) and 'end_elevation' not in segment:
+            segment['end_elevation'] = end_elevation
+            logger.trace(f"Segment {n}: end_elevation set to {end_elevation} meters")
+
+        if (isinstance(start_latitude, (int, float)) and isinstance(start_longitude, (int, float)) and
+            'start_latitude' not in segment and 'start_longitude' not in segment):
+            segment['start_latitude'] = start_latitude
+            segment['start_longitude'] = start_longitude
+            logger.trace(f"Segment {n}: start_latitude set to {start_latitude}, start_longitude set to {start_longitude}")
+        if (isinstance(end_latitude, (int, float)) and isinstance(end_longitude, (int, float)) and
+            'end_latitude' not in segment and 'end_longitude' not in segment):
+            segment['end_latitude'] = end_latitude
+            segment['end_longitude'] = end_longitude
+            logger.trace(f"Segment {n}: end_latitude set to {end_latitude}, end_longitude set to {end_longitude}")
+
+        if (isinstance(minlat, (int, float)) and isinstance(minlon, (int, float)) and
+            isinstance(maxlat, (int, float)) and isinstance(maxlon, (int, float)) and
+            'minlat' not in segment and 'minlon' not in segment and
+            'maxlat' not in segment and 'maxlon' not in segment):
+            segment['minlat'] = minlat
+            segment['minlon'] = minlon
+            segment['maxlat'] = maxlat
+            segment['maxlon'] = maxlon
+            logger.trace(f"Segment {n}: minlat set to {minlat}, minlon set to {minlon}, maxlat set to {maxlat}, maxlon set to {maxlon}")
+        
+        if 'total_ascent' not in segment:
+            segment['total_ascent'] = total_ascent
+            logger.trace(f"Segment {n}: total_ascent set to {total_ascent} meters")
+        if 'total_descent' not in segment:
+            segment['total_descent'] = total_descent
+            logger.trace(f"Segment {n}: total_descent set to {total_descent} meters")
+
+        avg_vam = (total_ascent / time_ascending.total_seconds()) if time_ascending.total_seconds() > 0 else None
+        if avg_vam is not None and 'avg_vam' not in segment:
+            segment['avg_vam'] = avg_vam
+            logger.trace(f"Segment {n}: avg_vam set to {avg_vam} m/s")
+
+        if isinstance(max_grade, (int, float)) and 'max_grade' not in segment:
+            segment['max_grade'] = max_grade
+            logger.trace(f"Segment {n}: max_grade set to {max_grade} %")
+        if isinstance(min_grade, (int, float)) and 'min_grade' not in segment:
+            segment['min_grade'] = min_grade
+            logger.trace(f"Segment {n}: min_grade set to {min_grade} %")
+
+        if isinstance(start_distance, (int, float)) and isinstance(end_distance, (int, float)) and \
+           isinstance(start_elevation, (int, float)) and isinstance(end_elevation, (int, float)) and \
+           'grade' not in segment:
+            dst = end_distance - start_distance
+            elev = end_elevation - start_elevation
+            x = math.sqrt(dst**2 - elev**2) # pythagoras (x**2 + y**2 = z**2 where z is distance delta and y is altitude delta)
+            
+            grade = (elev / x) * 100.0 if x > 0 else 0.0
+            segment['avg_grade'] = grade
+            logger.trace(f"Segment {n}: avg_grade set to {grade} %")
+
+        if isinstance(max_speed, (int, float)) and 'max_speed' not in segment:
+            segment['max_speed'] = max_speed
+            logger.trace(f"Segment {n}: max_speed set to {max_speed} m/s")
+
+        if isinstance(start_timer, (int, float)) and isinstance(end_timer, (int, float)) and \
+           isinstance(start_distance, (int, float)) and isinstance(end_distance, (int, float)) and \
+           'avg_speed' not in segment:
+            time_delta = end_timer - start_timer
+            distance_delta = end_distance - start_distance
+            avg_speed = (distance_delta / time_delta) if time_delta > 0 else 0.0
+            segment['avg_speed'] = avg_speed
+            logger.trace(f"Segment {n}: avg_speed set to {avg_speed} m/s")
+
+        if power_time_lst and 'avg_power' not in segment:
+            total_power = sum(p * (dt.total_seconds()) for p,dt in power_time_lst)
+            total_time = sum(dt.total_seconds() for _,dt in power_time_lst)
+            avg_power = (total_power / total_time) if total_time > 0 else 0.0
+            segment['avg_power'] = avg_power
+            logger.trace(f"Segment {n}: avg_power set to {avg_power} watts")
+
+        if isinstance(max_power, (int, float)) and 'max_power' not in segment:
+            segment['max_power'] = max_power
+            logger.trace(f"Segment {n}: max_power set to {max_power} watts")
+
+        if power30s_lst and 'normalized_power' not in segment:
+            normalized_power = statistics.mean([p**4 for p in power30s_lst]) ** (1/4)
+            segment['normalized_power'] = normalized_power
+            logger.trace(f"Segment {n}: normalized_power set to {normalized_power} watts")
+
+        if heart_rates:
+            if 'avg_heart_rate' not in segment:
+                avg_heart_rate = statistics.mean(heart_rates)
+                segment['avg_heart_rate'] = avg_heart_rate
+                logger.trace(f"Segment {n}: avg_heart_rate set to {avg_heart_rate} bpm")
+            if 'max_heart_rate' not in segment:
+                max_heart_rate = max(heart_rates)
+                segment['max_heart_rate'] = max_heart_rate
+                logger.trace(f"Segment {n}: max_heart_rate set to {max_heart_rate} bpm")
+
+        if cadences:
+            if 'avg_cadence' not in segment:
+                avg_cadence = round(statistics.mean(cadences))
+                segment['avg_cadence'] = avg_cadence
+                logger.trace(f"Segment {n}: avg_cadence set to {avg_cadence} rpm")
+            if 'max_cadence' not in segment:
+                max_cadence = max(cadences)
+                segment['max_cadence'] = max_cadence
+                logger.trace(f"Segment {n}: max_cadence set to {max_cadence} rpm")
+
+    return track
+
+
 def calculate_additional_data(track: Track, elevation_smoothing_window: int, grade_calculation_window: int) -> Track:
-    track = _calculate_times(track) # metadata: start_time, end_time, total_elapsed_time, fields: time
+    track = _calculate_times(track) # metadata: start_time, end_time, total_elapsed_time, fields: timer
     track = _calculate_bounds(track) # metadata: minlat, minlon, maxlat, maxlon
     track = _calculate_distances(track) # metadata: total_distance, total_track_distance, fields: distance, track_distance
     track = _calculate_speeds(track) # metadata: avg_speed, avg_track_speed, max_speed, max_track_speed, fields: speed, track_speed
@@ -464,6 +736,7 @@ def calculate_additional_data(track: Track, elevation_smoothing_window: int, gra
     track = _calculate_grade(track, window_size=grade_calculation_window) # metadata: max_grade, min_grade, fields: grade
     track = _calculate_ascent_descent(track) # metadata: total_ascent, total_descent, avg_vam
     track = _calculate_misc(track) # metadata: jump_count
+    track = _calculate_segments(track) # segments
 
     return track
 

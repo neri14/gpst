@@ -1,3 +1,4 @@
+import datetime
 import math
 
 from garmin_fit_sdk import Decoder, Stream, Profile
@@ -5,7 +6,7 @@ from pathlib import Path
 
 from ...utils.helpers import to_string
 from ...utils.logger import logger
-from ..track import Track, Value
+from ..track import Track, Value, SegmentType
 from .reader import Reader
 
 
@@ -14,6 +15,7 @@ class FitReader(Reader):
 
     def read(self, path: Path) -> Track|None:
         cache: dict[str, Value] = {}
+        metacache: dict[str, Value] = {}
 
         def mesg_listener(mesg_num: int, message: dict) -> None:
             if mesg_num == Profile['mesg_num']['SESSION']: # type: ignore
@@ -27,10 +29,12 @@ class FitReader(Reader):
             elif mesg_num == Profile['mesg_num']['EVENT']: # type: ignore
                 self._handle_event_message(message, cache, track)
             elif mesg_num == Profile['mesg_num']['CLIMB_PRO']: # type: ignore
-                self._handle_climb_message(message, cache, track)
+                self._handle_climb_message(message, cache, metacache, track)
             elif mesg_num == Profile['mesg_num']['JUMP']: # type: ignore
                 self._handle_jump_message(message, track)
-            # TBD messages: segment_lap, hrv, time_in_zone, lap, split, split_summary, timestamp_correlation, device_info, device_aux_battery_info
+            elif mesg_num == Profile['mesg_num']['SEGMENT_LAP']: # type: ignore
+                self._handle_segment_lap_message(message, track)
+            # TBD messages: hrv, time_in_zone, lap, split, split_summary, timestamp_correlation, device_info, device_aux_battery_info
 
         track = Track()
         try:
@@ -46,6 +50,17 @@ class FitReader(Reader):
         except Exception as e:
             logger.error(f"Failed to read fit file: {e}")
             return None
+
+        if isinstance(metacache.get('climb_start'), datetime.datetime) and isinstance(cache.get('active_climb'), int):
+            logger.info("Fit file ended while a ClimbPro climb was still active. Finalizing climb segment.")
+            track.add_segment({
+                'name': f"Climb {cache['active_climb']}",
+                'source': 'climbpro',
+                'type': SegmentType.CLIMB,
+                'start_time': metacache['climb_start'],
+                'end_time': max([t for t,_ in track.points_iter]),
+            })
+
         return track
 
 
@@ -355,7 +370,7 @@ class FitReader(Reader):
             cache.update(data)
 
 
-    def _handle_climb_message(self, message: dict, cache: dict[str, Value], track: Track) -> None:
+    def _handle_climb_message(self, message: dict, cache: dict[str, Value], metacache: dict[str, Value], track: Track) -> None:
         if 'timestamp' not in message:
             logger.warning("ClimbPro message without timestamp field.")
             return
@@ -373,20 +388,45 @@ class FitReader(Reader):
 
             track.upsert_point(timestamp, {'active_climb': climb})
             cache['active_climb'] = climb
+            metacache['climb_start'] = timestamp
         elif message['climb_pro_event'] == 'complete':
             if 'active_climb' not in cache:
                 logger.info("ClimbPro 'complete' event without ClimbPro 'start' event. Setting climb active from start.")
                 climb = message['climb_number']
 
+                start_timestamp: datetime.datetime|None = None
                 for t,r in track.points_iter:
+                    # get first timestamp as start timestamp
+                    if start_timestamp is None:
+                        start_timestamp = t
+
+                    # set active_climb for all points from start to current timestamp
                     if t < timestamp:
                         r['active_climb'] = climb
+                    else:
+                        break
+
+                if start_timestamp is not None:
+                    metacache['climb_start'] = start_timestamp
+
+            if isinstance(metacache.get('climb_start', None), datetime.datetime) and isinstance(cache.get('active_climb', None), int):
+                segment_start = metacache['climb_start']
+                segment_end = timestamp
+                track.add_segment({
+                    'name': f"Climb {cache['active_climb']}",
+                    'source': 'climbpro',
+                    'type': SegmentType.CLIMB,
+                    'start_time': segment_start,
+                    'end_time': segment_end,
+                })
 
             point = track.get_point(timestamp)
             if point is not None and 'active_climb' in point:
                 del point['active_climb']
             if 'active_climb' in cache:
                 del cache['active_climb']
+            if 'climb_start' in metacache:
+                del metacache['climb_start']
 
 
     def _handle_jump_message(self, message: dict, track: Track) -> None:
@@ -409,6 +449,116 @@ class FitReader(Reader):
 
         if len(data) > 0:
             track.upsert_point(message['timestamp'], data)
+
+
+    def _handle_segment_lap_message(self, message: dict, track: Track) -> None:
+        if 'status' in message and message['status'] != 'end':
+            logger.info(f"Skipping non-end SEGMENT_LAP message (status: {message['status']}).")
+            return
+
+        data: dict[str, Value] = {}
+
+        if 'name' in message:
+            data['name'] = message['name']
+        if 'manufacturer' in message:
+            data['source'] = message['manufacturer']
+        
+        data['type'] = SegmentType.SEGMENT
+
+        if 'start_time' in message:
+            data['start_time'] = message['start_time']
+        if 'timestamp' in message:
+            data['end_time'] = message['timestamp']
+
+        if 'start_position_lat' in message and not math.isnan(message['start_position_lat']):
+            data['start_latitude'] = message['start_position_lat'] * self.semicircles_factor
+        if 'start_position_long' in message and not math.isnan(message['start_position_long']):
+            data['start_longitude'] = message['start_position_long'] * self.semicircles_factor
+        if 'end_position_lat' in message and not math.isnan(message['end_position_lat']):
+            data['end_latitude'] = message['end_position_lat'] * self.semicircles_factor
+        if 'end_position_long' in message and not math.isnan(message['end_position_long']):
+            data['end_longitude'] = message['end_position_long'] * self.semicircles_factor
+
+        if 'nec_lat' in message and not math.isnan(message['nec_lat']):
+            data['maxlat'] = message['nec_lat'] * self.semicircles_factor
+        if 'nec_long' in message and not math.isnan(message['nec_long']):
+            data['maxlon'] = message['nec_long'] * self.semicircles_factor
+        if 'swc_lat' in message and not math.isnan(message['swc_lat']):
+            data['minlat'] = message['swc_lat'] * self.semicircles_factor
+        if 'swc_long' in message and not math.isnan(message['swc_long']):
+            data['minlon'] = message['swc_long'] * self.semicircles_factor
+
+        if 'total_elapsed_time' in message and not math.isnan(message['total_elapsed_time']):
+            data['total_elapsed_time'] = message['total_elapsed_time']
+        if 'total_timer_time' in message and not math.isnan(message['total_timer_time']):
+            data['total_timer_time'] = message['total_timer_time']
+        if 'total_distance' in message and not math.isnan(message['total_distance']):
+            data['total_distance'] = message['total_distance']
+        if 'total_ascent' in message and not math.isnan(message['total_ascent']):
+            data['total_ascent'] = message['total_ascent']
+        if 'total_descent' in message and not math.isnan(message['total_descent']):
+            data['total_descent'] = message['total_descent']
+
+        if 'avg_speed' in message and not math.isnan(message['avg_speed']):
+            data['avg_speed'] = message['avg_speed']
+        if 'max_speed' in message and not math.isnan(message['max_speed']):
+            data['max_speed'] = message['max_speed']
+
+        if 'avg_power' in message and not math.isnan(message['avg_power']):
+            data['avg_power'] = message['avg_power']
+        if 'max_power' in message and not math.isnan(message['max_power']):
+            data['max_power'] = message['max_power']
+        if 'normalized_power' in message and not math.isnan(message['normalized_power']):
+            data['normalized_power'] = message['normalized_power']
+
+        if 'avg_heart_rate' in message and not math.isnan(message['avg_heart_rate']):
+            data['avg_heart_rate'] = message['avg_heart_rate']
+        if 'max_heart_rate' in message and not math.isnan(message['max_heart_rate']):
+            data['max_heart_rate'] = message['max_heart_rate']
+
+        if 'avg_cadence' in message and not math.isnan(message['avg_cadence']):
+            data['avg_cadence'] = message['avg_cadence']
+        if 'max_cadence' in message and not math.isnan(message['max_cadence']):
+            data['max_cadence'] = message['max_cadence']
+
+        if 'total_cycles' in message and not math.isnan(message['total_cycles']):
+            data['total_cycles'] = message['total_cycles']
+        if 'total_strokes' in message and not math.isnan(message['total_strokes']):
+            data['total_strokes'] = message['total_strokes']
+        if 'total_work' in message and not math.isnan(message['total_work']):
+            data['total_work'] = message['total_work']
+        if 'total_calories' in message and not math.isnan(message['total_calories']):
+            data['total_calories'] = message['total_calories']
+
+        if 'total_grit' in message and not math.isnan(message['total_grit']):
+            data['total_grit'] = message['total_grit']
+        if 'avg_flow' in message and not math.isnan(message['avg_flow']):
+            data['avg_flow'] = message['avg_flow']
+
+        if 'avg_right_torque_effectiveness' in message and not math.isnan(message['avg_right_torque_effectiveness']):
+            data['avg_right_torque_effectiveness'] = message['avg_right_torque_effectiveness']
+        if 'avg_left_torque_effectiveness' in message and not math.isnan(message['avg_left_torque_effectiveness']):
+            data['avg_left_torque_effectiveness'] = message['avg_left_torque_effectiveness']
+        if 'avg_right_pedal_smoothness' in message and not math.isnan(message['avg_right_pedal_smoothness']):
+            data['avg_right_pedal_smoothness'] = message['avg_right_pedal_smoothness']
+        if 'avg_left_pedal_smoothness' in message and not math.isnan(message['avg_left_pedal_smoothness']):
+            data['avg_left_pedal_smoothness'] = message['avg_left_pedal_smoothness']
+
+        if 'avg_grade' in message and not math.isnan(message['avg_grade']):
+            data['avg_grade'] = message['avg_grade']
+
+        if 'max_pos_grade' in message and not math.isnan(message['max_pos_grade']):
+            data['max_grade'] = message['max_pos_grade']
+        elif 'min_neg_grade' in message and not math.isnan(message['min_neg_grade']):
+            data['max_grade'] = -message['min_neg_grade']
+
+        if 'max_neg_grade' in message and not math.isnan(message['max_neg_grade']):
+            data['min_grade'] = -message['max_neg_grade']
+        if 'min_pos_grade' in message and not math.isnan(message['min_pos_grade']):
+            data['min_grade'] = message['min_pos_grade']
+
+        if (len(data) > 0):
+            track.add_segment(data)
 
 
     def _generate_activity_name(self, sport: Value | None, sub_sport: Value | None, sport_profile_name: Value | None) -> str:

@@ -62,7 +62,7 @@
     be represented in track points in GPX 1.1 instances.
     </xsd:documentation></xsd:annotation>
     <xsd:sequence>
-      <xsd:element name="time" type="Seconds_t" minOccurs="0" /> <!-- time since start of activity in seconds -->
+      <xsd:element name="timer" type="Seconds_t" minOccurs="0" /> <!-- time since start of activity in seconds -->
       <xsd:element name="smoothele" type="Meters_t" minOccurs="0" /> <!-- smoothed altitude -->
       <xsd:element name="dist" type="Meters_t" minOccurs="0" /> <!-- distance since start of activity in meters -->
       <xsd:element name="kcal" type="Kilocalories_t" minOccurs="0" />

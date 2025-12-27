@@ -1,38 +1,50 @@
 import re
 import xml.etree.ElementTree as ET
 
-from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 
-from ..track import Track, Value
+from ..track import Track, Value, SegmentType
 from .reader import Reader
 from ...utils.logger import logger
 from ...utils.helpers import timestamp_from_str
 
 
-class Parser(ABC):
-    @abstractmethod
+
+class BaseParser:
+    def __init__(self, name: str = "BaseParser", raw_parser: bool = False):
+        self._name: str = name
+        self._raw_parser: bool = raw_parser
+
+    @property
+    def raw_parser(self) -> bool:
+        return self._raw_parser
+
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+
     def parse_metadata(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
-        raise NotImplementedError("Subclasses must implement parse_metadata method")
-    
-    @abstractmethod
-    def parse_field(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
-        raise NotImplementedError("Subclasses must implement parse_field method")
-
-
-class DuymmyParser(Parser):
-    def parse_metadata(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
-        logger.warning(f"Using DuymmyParser for tag \"{tag}\", all data will be ignored.")
-        return {}
-    
-    def parse_field(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
-        logger.warning(f"Using DuymmyParser for tag \"{tag}\", all data will be ignored.")
+        logger.warning(f"Parser {self._name} does not support metadata parsing - ignoring: {tag}")
         return {}
 
 
-class Gpx11Parser(Parser):
+    def parse_field(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
+        logger.warning(f"Parser {self._name} does not support field parsing - ignoring: {tag}")
+        return {}
+
+
+    def parse_raw(self, element: ET.Element, track: Track) -> None:
+        logger.warning(f"Parser {self._name} does not support raw metadata parsing - ignoring: {element.tag}")
+
+
+class Gpx11Parser(BaseParser):
+    def __init__(self):
+        super().__init__(name="Gpx11Parser")
+
     def parse_metadata(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
         data: dict[str, Value] = {}
         match tag:
@@ -102,10 +114,9 @@ class Gpx11Parser(Parser):
         return {}
 
 
-class TpxV2Parser(Parser):
-    def parse_metadata(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
-        logger.debug(f"Ignored TPX V2 metadata tag: \"{tag}\"")
-        return {}
+class TpxV2Parser(BaseParser):
+    def __init__(self):
+        super().__init__(name="TpxV2Parser")
 
 
     def parse_field(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
@@ -136,10 +147,9 @@ class TpxV2Parser(Parser):
         return {}
 
 
-class GpxxV3Parser(Parser):
-    def parse_metadata(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
-        logger.debug(f"Ignored GPXX V3 metadata tag: \"{tag}\"")
-        return {}
+class GpxxV3Parser(BaseParser):
+    def __init__(self):
+        super().__init__(name="GpxxV3Parser")
 
 
     def parse_field(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
@@ -164,7 +174,11 @@ class GpxxV3Parser(Parser):
         return {}
 
 
-class AdxV1Parser(Parser):
+class AdxV1Parser( BaseParser):
+    def __init__(self):
+        super().__init__(name="AdxV1Parser")
+
+
     def parse_metadata(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
         if text is None:
             logger.warning(f"ADX V1 metadata tag \"{tag}\" has no text.")
@@ -253,8 +267,8 @@ class AdxV1Parser(Parser):
             data: dict[str, Value] = {}
 
             match tag:
-                case "time":
-                    data["time"] = float(text)
+                case "timer":
+                    data["timer"] = float(text)
                 case  "smoothele":
                     data["smooth_elevation"] = float(text)
                 case "dist":
@@ -322,6 +336,139 @@ class AdxV1Parser(Parser):
         return {}
 
 
+
+class AsxV1Parser(BaseParser):
+    def __init__(self):
+        super().__init__(name="AsxV1Parser", raw_parser=True)
+
+
+    def parse_raw(self, element: ET.Element, track: Track) -> None:
+        if not element.tag.endswith("ActivitySegmentsExtension"):
+            logger.warning(f"{self.name} received unexpected element with tag {element.tag}")
+
+        logger.debug("Parsing ASX V1 activity segments...")
+        for n, segment in enumerate(element):
+            if not segment.tag.endswith("segment"):
+                logger.warning(f"{self.name} encountered unexpected segment element with tag {segment.tag}")
+                continue
+
+            logger.debug(f"{self.name} parsing segment {n}")
+            data: dict[str, Value] = {}
+
+            for field in segment:
+                try:
+                    _, tag = _parse_tag(field.tag)
+
+                    text: str|None = field.text
+                    if text is None:
+                        logger.warning(f"ASX V1 segment field \"{field.tag}\" has no text.")
+                        continue
+
+                    match tag:
+                        case "name":
+                            data["name"] = text
+                        case "source":
+                            data["source"] = text
+                        case "type":
+                            data["type"] = SegmentType(text)
+                        case "starttime":
+                            ts = timestamp_from_str(text)
+                            if ts is not None:
+                                data["start_time"] = ts
+                        case "endtime":
+                            ts = timestamp_from_str(text)
+                            if ts is not None:
+                                data["end_time"] = ts
+                        case "starttimer":
+                            data["start_timer"] = float(text)
+                        case "endtimer":
+                            data["end_timer"] = float(text)
+                        case "startdist":
+                            data["start_distance"] = float(text)
+                        case "enddist":
+                            data["end_distance"] = float(text)
+                        case "startele":
+                            data["start_elevation"] = float(text)
+                        case "endele":
+                            data["end_elevation"] = float(text)
+                        case "startlat":
+                            data["start_latitude"] = float(text)
+                        case "startlon":
+                            data["start_longitude"] = float(text)
+                        case "endlat":
+                            data["end_latitude"] = float(text)
+                        case "endlon":
+                            data["end_longitude"] = float(text)
+                        case "minlat":
+                            data["minlat"] = float(text)
+                        case "minlon":
+                            data["minlon"] = float(text)
+                        case "maxlat":
+                            data["maxlat"] = float(text)
+                        case "maxlon":
+                            data["maxlon"] = float(text)
+                        case "elapsedtime":
+                            data["total_elapsed_time"] = float(text)
+                        case "timertime":
+                            data["total_timer_time"] = float(text)
+                        case "distance":
+                            data["total_distance"] = float(text)
+                        case "ascent":
+                            data["total_ascent"] = float(text)
+                        case "descent":
+                            data["total_descent"] = float(text)
+                        case "avggrade":
+                            data["avg_grade"] = float(text)
+                        case "maxgrade":
+                            data["max_grade"] = float(text)
+                        case "mingrade":
+                            data["min_grade"] = float(text)
+                        case "avgspeed":
+                            data["avg_speed"] = float(text)
+                        case "maxspeed":
+                            data["max_speed"] = float(text)
+                        case "avgvam":
+                            data["avg_vam"] = float(text)
+                        case "avgpower":
+                            data["avg_power"] = float(text)
+                        case "maxpower":
+                            data["max_power"] = float(text)
+                        case "normpower":
+                            data["normalized_power"] = float(text)
+                        case "avghr":
+                            data["avg_heart_rate"] = float(text)
+                        case "maxhr":
+                            data["max_heart_rate"] = float(text)
+                        case "avgcad":
+                            data["avg_cadence"] = round(float(text))
+                        case "maxcad":
+                            data["max_cadence"] = round(float(text))
+                        case "cycles":
+                            data["total_cycles"] = float(text)
+                        case "strokes":
+                            data["total_strokes"] = float(text)
+                        case "work":
+                            data["total_work"] = float(text)
+                        case "kcal":
+                            data["total_calories"] = float(text)
+                        case "grit":
+                            data["total_grit"] = float(text)
+                        case "flow":
+                            data["avg_flow"] = float(text)
+                        case _:
+                            logger.debug(f"Ignored ASX V1 segment field tag: \"{field.tag}\"")
+                except Exception as e:
+                    logger.warning(f"Error parsing ASX V1 segment field \"{field.tag}\": {e}")
+
+            logger.trace(f"{self.name} segment {n} data: {data}")#TODO switch to trace
+            track.add_segment(data)
+
+
+    def parse_field(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
+        logger.debug(f"Ignored ASX V1 field tag: \"{tag}\"")
+        return {}
+
+
 class Namespace:
     _ignore_prefixes = [
         "http://www.",
@@ -332,11 +479,12 @@ class Namespace:
         "www8.",
     ]
 
-    def __init__(self, name: str, parser: Parser, url: str|None = None, xsd_url: str|None = None):
+
+    def __init__(self, name: str, parser: BaseParser, url: str|None = None, xsd_url: str|None = None):
         self.name: str = name
         self.url: str|None = url
         self.xsd_url: str|None = xsd_url
-        self.parser: Parser = parser
+        self.parser: BaseParser = parser
 
 
     @property
@@ -388,6 +536,10 @@ _namespace = {
     "adxv1": Namespace("ActivityDataExtensions v1", AdxV1Parser(),
                        "http://www.n3r1.com/xmlschemas/ActivityDataExtensions/v1",
                        "http://www.n3r1.com/xmlschemas/ActivityDataExtensionsv1.xsd"),
+    
+    "asxv1": Namespace("ActivitySegmentsExtnsions v1", AsxV1Parser(),
+                       "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensions/v1",
+                       "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensionsv1.xsd"),
 }
 
 namespace = SimpleNamespace(**_namespace)
@@ -557,39 +709,13 @@ class GpxReader(Reader):
                 logger.warning(f"Unsupported track extension tag: \"{child.tag}\"")
                 continue
 
-            if len(child) == 0:
+            if ns.parser.raw_parser:
+                logger.trace(f"Delegating raw parsing of tag {{{url}}}{tag} to parser {ns.parser.name}")
+                ns.parser.parse_raw(child, track)
+            elif len(child) == 0:
                 data = ns.parser.parse_metadata(tag, child.attrib, child.text)
                 logger.trace(f"Metadata from tag {{{url}}}{tag}: {data}")
                 for key, value in data.items():
                     track.set_metadata(key, value)
             else:
                 self._parse_track_extensions(child, track)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        # def walk(element: ET.Element, lvl=0):
-        #     print(f"{'  ' * lvl}<{element.tag}>  {element.attrib}")
-        #     n = 0
-        #     for child in element:
-        #         walk(child, lvl + 1)
-        #         n += 1
-        #     if not n:
-        #         print(f"{'  ' * (lvl + 1)}{element.text}")
-
-        # walk(root)
-
-        # return None
