@@ -23,7 +23,7 @@ namespace_schemas = {
     '': "http://www.topografix.com/GPX/1/1/gpx.xsd",
     'tpx': "http://www.garmin.com/xmlschemas/TrackPointExtensionv2.xsd",
     'adx': "http://www.n3r1.com/xmlschemas/ActivityDataExtensionsv1.xsd",
-    'asx': "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensions.xsd"
+    'asx': "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensionsv1.xsd"
 }
 
 tag = SimpleNamespace(
