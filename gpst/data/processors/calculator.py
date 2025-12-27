@@ -714,7 +714,7 @@ def _calculate_segments(track: Track) -> Track:
 
         if cadences:
             if 'avg_cadence' not in segment:
-                avg_cadence = statistics.mean(cadences)
+                avg_cadence = round(statistics.mean(cadences))
                 segment['avg_cadence'] = avg_cadence
                 logger.trace(f"Segment {n}: avg_cadence set to {avg_cadence} rpm")
             if 'max_cadence' not in segment:
