@@ -353,99 +353,108 @@ class AsxV1Parser(BaseParser):
                 continue
 
             logger.debug(f"{self.name} parsing segment {n}")
-            data = {}
+            data: dict[str, Value] = {}
 
             for field in segment:
                 try:
                     _, tag = _parse_tag(field.tag)
 
+                    text: str|None = field.text
+                    if text is None:
+                        logger.warning(f"ASX V1 segment field \"{field.tag}\" has no text.")
+                        continue
+
                     match tag:
                         case "name":
-                            data["name"] = field.text
+                            data["name"] = text
                         case "source":
-                            data["source"] = field.text
+                            data["source"] = text
                         case "type":
-                            data["type"] = SegmentType(field.text)
+                            data["type"] = SegmentType(text)
                         case "starttime":
-                            data["start_time"] = timestamp_from_str(field.text)
+                            ts = timestamp_from_str(text)
+                            if ts is not None:
+                                data["start_time"] = ts
                         case "endtime":
-                            data["end_time"] = timestamp_from_str(field.text)
+                            ts = timestamp_from_str(text)
+                            if ts is not None:
+                                data["end_time"] = ts
                         case "starttimer":
-                            data["start_timer"] = float(field.text)
+                            data["start_timer"] = float(text)
                         case "endtimer":
-                            data["end_timer"] = float(field.text)
+                            data["end_timer"] = float(text)
                         case "startdist":
-                            data["start_distance"] = float(field.text)
+                            data["start_distance"] = float(text)
                         case "enddist":
-                            data["end_distance"] = float(field.text)
+                            data["end_distance"] = float(text)
                         case "startele":
-                            data["start_elevation"] = float(field.text)
+                            data["start_elevation"] = float(text)
                         case "endele":
-                            data["end_elevation"] = float(field.text)
+                            data["end_elevation"] = float(text)
                         case "startlat":
-                            data["start_latitude"] = float(field.text)
+                            data["start_latitude"] = float(text)
                         case "startlon":
-                            data["start_longitude"] = float(field.text)
+                            data["start_longitude"] = float(text)
                         case "endlat":
-                            data["end_latitude"] = float(field.text)
+                            data["end_latitude"] = float(text)
                         case "endlon":
-                            data["end_longitude"] = float(field.text)
+                            data["end_longitude"] = float(text)
                         case "minlat":
-                            data["minlat"] = float(field.text)
+                            data["minlat"] = float(text)
                         case "minlon":
-                            data["minlon"] = float(field.text)
+                            data["minlon"] = float(text)
                         case "maxlat":
-                            data["maxlat"] = float(field.text)
+                            data["maxlat"] = float(text)
                         case "maxlon":
-                            data["maxlon"] = float(field.text)
+                            data["maxlon"] = float(text)
                         case "elapsedtime":
-                            data["total_elapsed_time"] = float(field.text)
+                            data["total_elapsed_time"] = float(text)
                         case "timertime":
-                            data["total_timer_time"] = float(field.text)
+                            data["total_timer_time"] = float(text)
                         case "distance":
-                            data["total_distance"] = float(field.text)
+                            data["total_distance"] = float(text)
                         case "ascent":
-                            data["total_ascent"] = float(field.text)
+                            data["total_ascent"] = float(text)
                         case "descent":
-                            data["total_descent"] = float(field.text)
+                            data["total_descent"] = float(text)
                         case "avggrade":
-                            data["avg_grade"] = float(field.text)
+                            data["avg_grade"] = float(text)
                         case "maxgrade":
-                            data["max_grade"] = float(field.text)
+                            data["max_grade"] = float(text)
                         case "mingrade":
-                            data["min_grade"] = float(field.text)
+                            data["min_grade"] = float(text)
                         case "avgspeed":
-                            data["avg_speed"] = float(field.text)
+                            data["avg_speed"] = float(text)
                         case "maxspeed":
-                            data["max_speed"] = float(field.text)
+                            data["max_speed"] = float(text)
                         case "avgvam":
-                            data["avg_vam"] = float(field.text)
+                            data["avg_vam"] = float(text)
                         case "avgpower":
-                            data["avg_power"] = float(field.text)
+                            data["avg_power"] = float(text)
                         case "maxpower":
-                            data["max_power"] = float(field.text)
+                            data["max_power"] = float(text)
                         case "normpower":
-                            data["normalized_power"] = float(field.text)
+                            data["normalized_power"] = float(text)
                         case "avghr":
-                            data["avg_heart_rate"] = float(field.text)
+                            data["avg_heart_rate"] = float(text)
                         case "maxhr":
-                            data["max_heart_rate"] = float(field.text)
+                            data["max_heart_rate"] = float(text)
                         case "avgcad":
-                            data["avg_cadence"] = round(float(field.text))
+                            data["avg_cadence"] = round(float(text))
                         case "maxcad":
-                            data["max_cadence"] = round(float(field.text))
+                            data["max_cadence"] = round(float(text))
                         case "cycles":
-                            data["total_cycles"] = float(field.text)
+                            data["total_cycles"] = float(text)
                         case "strokes":
-                            data["total_strokes"] = float(field.text)
+                            data["total_strokes"] = float(text)
                         case "work":
-                            data["total_work"] = float(field.text)
+                            data["total_work"] = float(text)
                         case "kcal":
-                            data["total_calories"] = float(field.text)
+                            data["total_calories"] = float(text)
                         case "grit":
-                            data["total_grit"] = float(field.text)
+                            data["total_grit"] = float(text)
                         case "flow":
-                            data["avg_flow"] = float(field.text)
+                            data["avg_flow"] = float(text)
                         case _:
                             logger.debug(f"Ignored ASX V1 segment field tag: \"{field.tag}\"")
                 except Exception as e:

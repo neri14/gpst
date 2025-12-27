@@ -499,7 +499,7 @@ def _calculate_segments(track: Track) -> Track:
 
         max_speed = None
 
-        power_time_lst: list[float, timedelta] = []
+        power_time_lst: list[tuple[float, timedelta]] = []
         max_power = None
         power30s_lst = []
 
@@ -592,7 +592,7 @@ def _calculate_segments(track: Track) -> Track:
                 cadences.append(cadence)
 
             last_ts = ts
-            last_elevation = smooth_elevation
+            last_elevation = smooth_elevation if isinstance(smooth_elevation, (int, float)) else last_elevation
 
         # Set calculated segment fields if not already present
         if isinstance(start_timer, (int, float)) and 'start_timer' not in segment:
