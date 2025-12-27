@@ -194,7 +194,7 @@ class GpxWriter(Writer):
 
 
     def _create_trk_asx_extension(self, trk_ext: ET.Element, track: Track) -> ET.Element:
-        trk_asx = ET.SubElement(trk_ext, f"{tag.adx}ActivitySegmentsExtension")
+        trk_asx = ET.SubElement(trk_ext, f"{tag.asx}ActivitySegmentsExtension")
 
         for ts, segment in track.segments_iter:
             trk_seg = ET.SubElement(trk_asx, f"{tag.asx}segment")
