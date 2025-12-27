@@ -442,18 +442,12 @@ class AsxV1Parser(BaseParser):
                             data["total_work"] = float(field.text)
                         case "kcal":
                             data["total_calories"] = float(field.text)
-                        case "avgrtrqeff":
-                            data["avg_right_torque_effectiveness"] = float(field.text)
-                        case "avgltrqeff":
-                            data["avg_left_torque_effectiveness"] = float(field.text)
-                        case "avgrpdlsmooth":
-                            data["avg_right_pedal_smoothness"] = float(field.text)
-                        case "avglpdlsmooth":
-                            data["avg_left_pedal_smoothness"] = float(field.text)
                         case "grit":
                             data["total_grit"] = float(field.text)
                         case "flow":
                             data["avg_flow"] = float(field.text)
+                        case _:
+                            logger.debug(f"Ignored ASX V1 segment field tag: \"{field.tag}\"")
                 except Exception as e:
                     logger.warning(f"Error parsing ASX V1 segment field \"{field.tag}\": {e}")
 

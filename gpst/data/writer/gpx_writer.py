@@ -302,15 +302,6 @@ class GpxWriter(Writer):
             if 'total_calories' in segment:
                 ET.SubElement(trk_seg, f"{tag.asx}kcal").text = str(segment['total_calories'])
 
-            if 'avg_right_torque_effectiveness' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}avgrtrqeff").text = str(segment['avg_right_torque_effectiveness'])
-            if 'avg_left_torque_effectiveness' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}avgltrqeff").text = str(segment['avg_left_torque_effectiveness'])
-            if 'avg_right_pedal_smoothness' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}avgrpdlsmooth").text = str(segment['avg_right_pedal_smoothness'])
-            if 'avg_left_pedal_smoothness' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}avglpdlsmooth").text = str(segment['avg_left_pedal_smoothness'])
-
             if 'total_grit' in segment:
                 ET.SubElement(trk_seg, f"{tag.asx}grit").text = str(segment['total_grit'])
             if 'avg_flow' in segment:
