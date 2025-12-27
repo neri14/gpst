@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from enum import StrEnum
 from typing import Iterable, TypeAlias
 
 from ..utils.helpers import to_string, timestamp_str
@@ -18,6 +19,9 @@ class Type:
     min_value: int | float | None = None
     max_value: int | float | None = None
 
+class SegmentType(StrEnum):
+    SEGMENT='segment'
+    CLIMB='climb'
 
 cadence_t           = Type('cadence',          int,          'revolutions per minute',  'rpm',    0,        None)
 calories_t          = Type('calories',         float,        'kilocalories',            'kcal',   0,        None)
@@ -41,12 +45,13 @@ int_t               = Type('int',              int,          None,              
 float_t             = Type('float',            float,        None,                      None,     None,     None)
 percent_t           = Type('percent',          float,        'percent',                 '%',      0,        100)
 string_t            = Type('string',           str,          None,                      None,     None,     None)
+segment_type_t      = Type('segment_type',     SegmentType,  None,                      None,     None,     None)
 
 unknown_t           = Type('unknown',          None,         None,                      None,     None,     None)
 
 
 point_fields = {
-    'time':                             time_t,
+    'timer':                            time_t,
     'timestamp':                        timestamp_t,
     'latitude':                         latitude_t,
     'longitude':                        longitude_t,
@@ -150,10 +155,65 @@ metadata_fields = {
 }
 
 
+segment_fields = {
+    'name':                             string_t,
+    'source':                           string_t,
+    'type':                             segment_type_t,
+    #start/end definition
+    'start_time':                       timestamp_t,
+    'end_time':                         timestamp_t,
+    'start_timer':                      time_t,
+    'end_timer':                        time_t,
+    'start_distance':                   distance_t,
+    'end_distance':                     distance_t,
+    'start_elevation':                  elevation_t,
+    'end_elevation':                    elevation_t,
+    'start_latitude':                   latitude_t,
+    'start_longitude':                  longitude_t,
+    'end_latitude':                     latitude_t,
+    'end_longitude':                    longitude_t,
+    #bounds
+    'minlat':                           latitude_t,
+    'minlon':                           longitude_t,
+    'maxlat':                           latitude_t,
+    'maxlon':                           longitude_t,
+    #totals/averages
+    'total_elapsed_time':               time_t,
+    'total_timer_time':                 time_t,
+    'total_distance':                   distance_t,
+    'total_ascent':                     elevation_t,
+    'total_descent':                    elevation_t,
+    'avg_grade':                        grade_t,
+    'max_grade':                        grade_t,
+    'min_grade':                        grade_t,
+    'avg_speed':                        speed_t,
+    'max_speed':                        speed_t,
+    'avg_vam':                          speed_t,
+    'avg_power':                        power_t,
+    'max_power':                        power_t,
+    'normalized_power':                 power_t,
+    'avg_heart_rate':                   heart_rate_t,
+    'max_heart_rate':                   heart_rate_t,
+    'avg_cadence':                      cadence_t,
+    'max_cadence':                      cadence_t,
+    'total_cycles':                     int_t,
+    'total_strokes':                    int_t,
+    'total_work':                       work_t,
+    'total_calories':                   calories_t,
+    'avg_right_torque_effectiveness':   percent_t,
+    'avg_left_torque_effectiveness':    percent_t,
+    'avg_right_pedal_smoothness':       percent_t,
+    'avg_left_pedal_smoothness':        percent_t,
+    'total_grit':                       float_t,
+    'avg_flow':                         float_t,
+}
+
+
 class Track:
     def __init__(self) -> None:
         self._points: dict[datetime, dict[str, Value]] = {}
         self._metadata: dict[str, Value] = {}
+        self._segments: list[tuple[datetime, dict[str, Value]]] = []
 
 
     @property
@@ -170,6 +230,17 @@ class Track:
     @property
     def metadata(self) -> dict[str, Value]:
         return self._metadata
+    
+
+    @property
+    def segments(self) -> list[tuple[datetime, dict[str, Value]]]:
+        return self._segments
+
+
+    @property
+    def segments_iter(self) -> Iterable[tuple[datetime, dict[str, Value]]]:
+        for ts, segment in sorted(self._segments, key=lambda x: x[0]):
+            yield ts, segment
 
 
     def __repr__(self) -> str:
@@ -267,6 +338,26 @@ class Track:
         for key in keys:
             if key in self._metadata:
                 del self._metadata[key]
+
+
+    def add_segment(self, data: dict[str, Value]) -> None:
+        if not isinstance(data, dict):
+            raise TypeError(f"Data must be a dictionary, got {type(data)}.")
+
+        timestamp = data.get('start_time')
+        if not isinstance(timestamp, datetime):
+            raise ValueError("Segment 'start_time' must be a valid datetime object.")
+
+        if not isinstance(data.get('end_time'), datetime):
+            raise ValueError("Segment 'end_time' must be a valid datetime object.")
+
+        for key in data:
+            if key in segment_fields and segment_fields[key].pytype == float and isinstance(data[key], int):
+                data[key] = float(data[key])  # type: ignore[arg-type]
+
+            self._verify_type(key, data[key], segment_fields.get(key))
+
+        self._segments.append((timestamp, data))
 
 
     def _verify_type(self, key: str, value: Value, type_info: Type | None, timestamp: datetime|None = None) -> None:

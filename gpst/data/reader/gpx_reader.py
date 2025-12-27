@@ -253,8 +253,8 @@ class AdxV1Parser(Parser):
             data: dict[str, Value] = {}
 
             match tag:
-                case "time":
-                    data["time"] = float(text)
+                case "timer":
+                    data["timer"] = float(text)
                 case  "smoothele":
                     data["smooth_elevation"] = float(text)
                 case "dist":
