@@ -15,14 +15,14 @@ namespace_urls = {
     '': "http://www.topografix.com/GPX/1/1",
     'xsi': "http://www.w3.org/2001/XMLSchema-instance",
     'tpx': "http://www.garmin.com/xmlschemas/TrackPointExtension/v2",
-    'adx': "http://www.n3r1.com/xmlschemas/ActivityDataExtensions/v1",
+    'adx': "http://www.n3r1.com/xmlschemas/ActivityDataExtensions/v11",
     'asx': "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensions/v1"
 }
 
 namespace_schemas = {
     '': "http://www.topografix.com/GPX/1/1/gpx.xsd",
     'tpx': "http://www.garmin.com/xmlschemas/TrackPointExtensionv2.xsd",
-    'adx': "http://www.n3r1.com/xmlschemas/ActivityDataExtensionsv1.xsd",
+    'adx': "http://www.n3r1.com/xmlschemas/ActivityDataExtensionsv11.xsd",
     'asx': "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensionsv1.xsd"
 }
 
@@ -384,6 +384,10 @@ class GpxWriter(Writer):
 
         if 'grade' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}grade").text = str(data['grade'])
+        if 'cumulative_ascent' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}asc").text = str(data['cumulative_ascent'])
+        if 'cumulative_descent' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}desc").text = str(data['cumulative_descent'])
         if 'vertical_speed' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}vspeed").text = str(data['vertical_speed'])
 

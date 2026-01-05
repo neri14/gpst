@@ -68,6 +68,8 @@ point_fields = {
     'power10s':                         power_t,
     'power30s':                         power_t,
     'grade':                            grade_t,
+    'cumulative_ascent':                elevation_t,
+    'cumulative_descent':               elevation_t,
     'temperature':                      temperature_t,
     'accumulated_power':                power_t,
     'gps_accuracy':                     distance_t,

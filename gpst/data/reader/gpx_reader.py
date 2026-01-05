@@ -174,14 +174,14 @@ class GpxxV3Parser(BaseParser):
         return {}
 
 
-class AdxV1Parser( BaseParser):
+class AdxV11Parser( BaseParser):
     def __init__(self):
-        super().__init__(name="AdxV1Parser")
+        super().__init__(name="AdxV11Parser")
 
 
     def parse_metadata(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
         if text is None:
-            logger.warning(f"ADX V1 metadata tag \"{tag}\" has no text.")
+            logger.warning(f"ADX V11 metadata tag \"{tag}\" has no text.")
             return {}
         try:
             data: dict[str, Value] = {}
@@ -248,19 +248,19 @@ class AdxV1Parser( BaseParser):
                 case "minatemp":
                     data["min_temperature"] = float(text)
                 case _:
-                    logger.debug(f"Ignored ADX V1 metadata tag: \"{tag}\"")
+                    logger.debug(f"Ignored ADX V11 metadata tag: \"{tag}\"")
 
             return data
         except ValueError as e:
-            logger.warning(f"Invalid type(s) for ADX V1 metadata tag: \"{tag}\", attribs: {attrib}, text: \"{text}\", error: {e}")
+            logger.warning(f"Invalid type(s) for ADX V11 metadata tag: \"{tag}\", attribs: {attrib}, text: \"{text}\", error: {e}")
         except Exception as e:
-            logger.warning(f"Error parsing ADX V1 metadata tag \"{tag}\": {e}")
+            logger.warning(f"Error parsing ADX V11 metadata tag \"{tag}\": {e}")
         return {}
 
 
     def parse_field(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
         if text is None:
-            logger.warning(f"ADX V1 field tag \"{tag}\" has no text.")
+            logger.warning(f"ADX V11 field tag \"{tag}\" has no text.")
             return {}
 
         try:
@@ -291,6 +291,10 @@ class AdxV1Parser( BaseParser):
                     data["accumulated_power"] = float(text)
                 case "grade":
                     data["grade"] = float(text)
+                case "asc":
+                    data["cumulative_ascent"] = float(text)
+                case "desc":
+                    data["cumulative_descent"] = float(text)
                 case "vspeed":
                     data["vertical_speed"] = float(text)
                 case "ltrqeff":
@@ -326,13 +330,13 @@ class AdxV1Parser( BaseParser):
                 case "jumpscore":
                     data["jump_score"] = float(text)
                 case _:
-                    logger.debug(f"Ignored ADX V1 field tag: \"{tag}\"")
+                    logger.debug(f"Ignored ADX V11 field tag: \"{tag}\"")
 
             return data
         except ValueError as e:
-            logger.warning(f"Invalid type(s) for ADX V1 field tag: \"{tag}\", attribs: {attrib}, text: \"{text}\", error: {e}")
+            logger.warning(f"Invalid type(s) for ADX V11 field tag: \"{tag}\", attribs: {attrib}, text: \"{text}\", error: {e}")
         except Exception as e:
-            logger.warning(f"Error parsing ADX V1 field tag \"{tag}\": {e}")
+            logger.warning(f"Error parsing ADX V11 field tag \"{tag}\": {e}")
         return {}
 
 
@@ -533,9 +537,13 @@ _namespace = {
                         "http://www.garmin.com/xmlschemas/GpxExtensions/v3",
                         "http://www.garmin.com/xmlschemas/GpxExtensionsv3.xsd"),
 
-    "adxv1": Namespace("ActivityDataExtensions v1", AdxV1Parser(),
+    "adxv1": Namespace("ActivityDataExtensions v1", AdxV11Parser(),
                        "http://www.n3r1.com/xmlschemas/ActivityDataExtensions/v1",
                        "http://www.n3r1.com/xmlschemas/ActivityDataExtensionsv1.xsd"),
+
+    "adxv11": Namespace("ActivityDataExtensions v1.1", AdxV11Parser(),
+                        "http://www.n3r1.com/xmlschemas/ActivityDataExtensions/v11",
+                        "http://www.n3r1.com/xmlschemas/ActivityDataExtensionsv11.xsd"),
     
     "asxv1": Namespace("ActivitySegmentsExtnsions v1", AsxV1Parser(),
                        "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensions/v1",

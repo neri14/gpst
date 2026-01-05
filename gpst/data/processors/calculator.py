@@ -387,12 +387,9 @@ def _calculate_grade(track: Track, window_size: int) -> Track:
 
 
 def _calculate_ascent_descent(track: Track) -> Track:
-    """Calculate total_ascent, total_descent, avg_vam metadata."""
+    """Calculate cumulative ascent point field and total_ascent, total_descent, avg_vam metadata."""
 
     logger.debug("Calculating total ascent, total descent and avg_vam...")
-    if 'total_ascent' in track.metadata and 'total_descent' in track.metadata and 'avg_vam' in track.metadata:
-        logger.debug("Ascent/descent/vam metadata already present. Skipping calculation.")
-        return track
 
     total_ascent: float = 0.0
     total_descent: float = 0.0
@@ -418,6 +415,9 @@ def _calculate_ascent_descent(track: Track) -> Track:
                 time_ascending += ((ts - last_ts) if last_ts else timedelta(0))
             elif delta_elev < 0:
                 total_descent += abs(delta_elev)
+
+        point['cumulative_ascent'] = total_ascent
+        point['cumulative_descent'] = total_descent
 
         last_ts = ts
         last_elevation = elevation

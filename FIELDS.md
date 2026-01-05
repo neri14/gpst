@@ -85,6 +85,8 @@ Note: the file was AI generated, may contain errors, consult `track.py` and `gpx
 | power10s | float | watts | W | 0 |   | `trkpt/extensions/adx:power10s` |
 | power30s | float | watts | W | 0 |   | `trkpt/extensions/adx:power30s` |
 | grade | float | percent | % |   |   | `trkpt/extensions/adx:grade` |
+| cumulative_ascent | float | meters | m |   |   | `trkpt/extensions/adx:asc` |
+| cumulative_descent | float | meters | m |   |   | `trkpt/extensions/adx:desc` |
 | temperature | float | degrees Celsius | °C | -273.15 |   | `trkpt/extensions/tpx:atemp` |
 | accumulated_power | float | watts | W | 0 |   | `trkpt/extensions/adx:accpower` |
 | gps_accuracy | float | meters | m | 0 |   |   |
