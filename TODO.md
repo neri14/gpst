@@ -8,3 +8,4 @@
 
 ## Segment
 - new fields: startasc/endasc - cumulative ascent at start/end of segment
+- new fields: minele/maxele - min/max elevation of segment
