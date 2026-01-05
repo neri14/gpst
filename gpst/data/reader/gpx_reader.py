@@ -201,6 +201,10 @@ class AdxV11Parser( BaseParser):
                     data["max_grade"] = float(text)
                 case "mingrade":
                     data["min_grade"] = float(text)
+                case "maxele":
+                    data["max_elevation"] = float(text)
+                case "minele":
+                    data["min_elevation"] = float(text)
                 case "cycles":
                     data["total_cycles"] = int(text)
                 case "strokes":
@@ -435,6 +439,10 @@ class AsxV11Parser(BaseParser):
                             data["max_grade"] = float(text)
                         case "mingrade":
                             data["min_grade"] = float(text)
+                        case "maxele":
+                            data["max_elevation"] = float(text)
+                        case "minele":
+                            data["min_elevation"] = float(text)
                         case "avgspeed":
                             data["avg_speed"] = float(text)
                         case "maxspeed":

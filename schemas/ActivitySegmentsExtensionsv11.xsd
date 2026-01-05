@@ -75,6 +75,9 @@
       <xsd:element name="maxgrade" type="Percent_t" minOccurs="0"/>
       <xsd:element name="mingrade" type="Percent_t" minOccurs="0"/>
 
+      <xsd:element name="maxele" type="Meters_t" minOccurs="0"/>
+      <xsd:element name="minele" type="Meters_t" minOccurs="0"/>
+
       <xsd:element name="avgspeed" type="MetersPerSecond_t" minOccurs="0"/>
       <xsd:element name="maxspeed" type="MetersPerSecond_t" minOccurs="0"/>
 

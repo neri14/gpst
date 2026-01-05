@@ -299,20 +299,36 @@ def _calculate_power_averages(track: Track) -> Track:
     return track
 
 
-def _calculate_smooth_elevation(track: Track, window_size: int) -> Track:
+def _calculate_elevation(track: Track, window_size: int) -> Track:
     """Calculate smooth_elevation point field using a simple moving average."""
 
     logger.debug("Calculating smooth elevation for track points...")
 
     n: int = 0
+    max_elevation: float | None = None
+    min_elevation: float | None = None
 
     for ts, point, window in track.sliding_window_iter(key='distance', size=window_size):
+        elev = point.get('elevation')
+        if isinstance(elev, (int, float)):
+            if max_elevation is None or elev > max_elevation:
+                max_elevation = elev
+            if min_elevation is None or elev < min_elevation:
+                min_elevation = elev
+
         if 'smooth_elevation' not in point:
             elevs = [p['elevation'] for p in window if 'elevation' in p and isinstance(p['elevation'], (int, float))]
             if len(elevs) > 0:
                 point['smooth_elevation'] = statistics.mean(elevs)
                 n += 1
                 logger.trace(f"Setting smooth_elevation for point at {to_string(ts)} to {point['smooth_elevation']} meters")
+
+    if isinstance(max_elevation, (int, float)) and "max_elevation" not in track.metadata:
+        track.set_metadata('max_elevation', max_elevation)
+        logger.info(f"Max elevation set to {max_elevation} meters")
+    if isinstance(min_elevation, (int, float)) and "min_elevation" not in track.metadata:
+        track.set_metadata('min_elevation', min_elevation)
+        logger.info(f"Min elevation set to {min_elevation} meters")
 
     logger.debug(f"Calculated smooth_elevation for {n} points.")
     return track
@@ -502,6 +518,9 @@ def _calculate_segments(track: Track) -> Track:
         max_grade = None
         min_grade = None
 
+        max_elevation = None
+        min_elevation = None
+
         max_speed = None
 
         power_time_lst: list[tuple[float, timedelta]] = []
@@ -584,6 +603,13 @@ def _calculate_segments(track: Track) -> Track:
                     max_grade = grade
                 if min_grade is None or grade < min_grade:
                     min_grade = grade
+
+            elevation = point.get('elevation')
+            if isinstance(elevation, (int, float)):
+                if max_elevation is None or elevation > max_elevation:
+                    max_elevation = elevation
+                if min_elevation is None or elevation < min_elevation:
+                    min_elevation = elevation
 
             speed = point.get('speed')
             if isinstance(speed, (int, float)):
@@ -692,6 +718,13 @@ def _calculate_segments(track: Track) -> Track:
             segment['min_grade'] = min_grade
             logger.trace(f"Segment {n}: min_grade set to {min_grade} %")
 
+        if isinstance(max_elevation, (int, float)) and 'max_elevation' not in segment:
+            segment['max_elevation'] = max_elevation
+            logger.trace(f"Segment {n}: max_elevation set to {max_elevation} meters")
+        if isinstance(min_elevation, (int, float)) and 'min_elevation' not in segment:
+            segment['min_elevation'] = min_elevation
+            logger.trace(f"Segment {n}: min_elevation set to {min_elevation} meters")
+
         if isinstance(start_distance, (int, float)) and isinstance(end_distance, (int, float)) and \
            isinstance(start_elevation, (int, float)) and isinstance(end_elevation, (int, float)) and \
            'grade' not in segment:
@@ -762,7 +795,7 @@ def calculate_additional_data(track: Track, elevation_smoothing_window: int, gra
     track = _calculate_speeds(track) # metadata: avg_speed, avg_track_speed, max_speed, max_track_speed, fields: speed, track_speed
     track = _calculate_vspeeds(track) # fields: vertical_speed
     track = _calculate_power_averages(track) # fields: power3s, power10s, power30s
-    track = _calculate_smooth_elevation(track, window_size=elevation_smoothing_window) # fields: smooth_elevation
+    track = _calculate_elevation(track, window_size=elevation_smoothing_window) # fields: smooth_elevation, min_elevation, max_elevation
     track = _calculate_grade(track, window_size=grade_calculation_window) # metadata: max_grade, min_grade, fields: grade
     track = _calculate_ascent_descent(track) # metadata: total_ascent, total_descent, avg_vam
     track = _calculate_misc(track) # metadata: jump_count

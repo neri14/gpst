@@ -125,6 +125,10 @@ class GpxWriter(Writer):
             ET.SubElement(trk_adx, f"{tag.adx}maxgrade").text = str(track.metadata['max_grade'])
         if 'min_grade' in track.metadata:
             ET.SubElement(trk_adx, f"{tag.adx}mingrade").text = str(track.metadata['min_grade'])
+        if 'max_elevation' in track.metadata:
+            ET.SubElement(trk_adx, f"{tag.adx}maxele").text = str(track.metadata['max_elevation'])
+        if 'min_elevation' in track.metadata:
+            ET.SubElement(trk_adx, f"{tag.adx}minele").text = str(track.metadata['min_elevation'])
         if 'total_cycles' in track.metadata:
             ET.SubElement(trk_adx, f"{tag.adx}cycles").text = str(track.metadata['total_cycles'])
         if 'total_strokes' in track.metadata:
@@ -270,6 +274,11 @@ class GpxWriter(Writer):
                 ET.SubElement(trk_seg, f"{tag.asx}maxgrade").text = str(segment['max_grade'])
             if 'min_grade' in segment:
                 ET.SubElement(trk_seg, f"{tag.asx}mingrade").text = str(segment['min_grade'])
+
+            if 'max_elevation' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}maxele").text = str(segment['max_elevation'])
+            if 'min_elevation' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}minele").text = str(segment['min_elevation'])
 
             if 'avg_speed' in segment:
                 ET.SubElement(trk_seg, f"{tag.asx}avgspeed").text = str(segment['avg_speed'])

@@ -1,7 +1,7 @@
 # ToDo
 
 ## Metadata
-- new fields: minele/maxele - min/max elevation of track
+- DONE: new fields: minele/maxele - min/max elevation of track
 
 ## Trackpoint
 - DONE: new field: asc - cumulative ascent
@@ -10,4 +10,4 @@
 ## Segment
 - DONE: new fields: startasc/endasc - cumulative ascent at start/end of segment
 - DONE: new fields: startdesc/enddesc - cumulative descent at start/end of segment
-- new fields: minele/maxele - min/max elevation of segment
+- DONE: new fields: minele/maxele - min/max elevation of segment
