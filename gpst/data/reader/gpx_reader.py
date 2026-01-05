@@ -341,16 +341,16 @@ class AdxV11Parser( BaseParser):
 
 
 
-class AsxV1Parser(BaseParser):
+class AsxV11Parser(BaseParser):
     def __init__(self):
-        super().__init__(name="AsxV1Parser", raw_parser=True)
+        super().__init__(name="AsxV11Parser", raw_parser=True)
 
 
     def parse_raw(self, element: ET.Element, track: Track) -> None:
         if not element.tag.endswith("ActivitySegmentsExtension"):
             logger.warning(f"{self.name} received unexpected element with tag {element.tag}")
 
-        logger.debug("Parsing ASX V1 activity segments...")
+        logger.debug("Parsing ASX V11 activity segments...")
         for n, segment in enumerate(element):
             if not segment.tag.endswith("segment"):
                 logger.warning(f"{self.name} encountered unexpected segment element with tag {segment.tag}")
@@ -365,7 +365,7 @@ class AsxV1Parser(BaseParser):
 
                     text: str|None = field.text
                     if text is None:
-                        logger.warning(f"ASX V1 segment field \"{field.tag}\" has no text.")
+                        logger.warning(f"ASX V11 segment field \"{field.tag}\" has no text.")
                         continue
 
                     match tag:
@@ -395,6 +395,14 @@ class AsxV1Parser(BaseParser):
                             data["start_elevation"] = float(text)
                         case "endele":
                             data["end_elevation"] = float(text)
+                        case "startasc":
+                            data["start_ascent"] = float(text)
+                        case "endasc":
+                            data["end_ascent"] = float(text)
+                        case "startdesc":
+                            data["start_descent"] = float(text)
+                        case "enddesc":
+                            data["end_descent"] = float(text)
                         case "startlat":
                             data["start_latitude"] = float(text)
                         case "startlon":
@@ -460,16 +468,16 @@ class AsxV1Parser(BaseParser):
                         case "flow":
                             data["avg_flow"] = float(text)
                         case _:
-                            logger.debug(f"Ignored ASX V1 segment field tag: \"{field.tag}\"")
+                            logger.debug(f"Ignored ASX V11 segment field tag: \"{field.tag}\"")
                 except Exception as e:
-                    logger.warning(f"Error parsing ASX V1 segment field \"{field.tag}\": {e}")
+                    logger.warning(f"Error parsing ASX V11 segment field \"{field.tag}\": {e}")
 
             logger.trace(f"{self.name} segment {n} data: {data}")#TODO switch to trace
             track.add_segment(data)
 
 
     def parse_field(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
-        logger.debug(f"Ignored ASX V1 field tag: \"{tag}\"")
+        logger.debug(f"Ignored ASX V11 field tag: \"{tag}\"")
         return {}
 
 
@@ -545,9 +553,13 @@ _namespace = {
                         "http://www.n3r1.com/xmlschemas/ActivityDataExtensions/v11",
                         "http://www.n3r1.com/xmlschemas/ActivityDataExtensionsv11.xsd"),
     
-    "asxv1": Namespace("ActivitySegmentsExtnsions v1", AsxV1Parser(),
+    "asxv1": Namespace("ActivitySegmentsExtnsions v1", AsxV11Parser(),
                        "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensions/v1",
                        "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensionsv1.xsd"),
+
+    "asxv11": Namespace("ActivitySegmentsExtnsions v1.1", AsxV11Parser(),
+                       "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensions/v11",
+                       "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensionsv11.xsd"),
 }
 
 namespace = SimpleNamespace(**_namespace)

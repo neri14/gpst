@@ -8,6 +8,6 @@
 - DONE: new field: desc - cumulative descent
 
 ## Segment
-- new fields: startasc/endasc - cumulative ascent at start/end of segment
-- new fields: startdesc/enddesc - cumulative descent at start/end of segment
+- DONE: new fields: startasc/endasc - cumulative ascent at start/end of segment
+- DONE: new fields: startdesc/enddesc - cumulative descent at start/end of segment
 - new fields: minele/maxele - min/max elevation of segment

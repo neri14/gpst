@@ -16,14 +16,14 @@ namespace_urls = {
     'xsi': "http://www.w3.org/2001/XMLSchema-instance",
     'tpx': "http://www.garmin.com/xmlschemas/TrackPointExtension/v2",
     'adx': "http://www.n3r1.com/xmlschemas/ActivityDataExtensions/v11",
-    'asx': "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensions/v1"
+    'asx': "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensions/v11"
 }
 
 namespace_schemas = {
     '': "http://www.topografix.com/GPX/1/1/gpx.xsd",
     'tpx': "http://www.garmin.com/xmlschemas/TrackPointExtensionv2.xsd",
     'adx': "http://www.n3r1.com/xmlschemas/ActivityDataExtensionsv11.xsd",
-    'asx': "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensionsv1.xsd"
+    'asx': "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensionsv11.xsd"
 }
 
 tag = SimpleNamespace(
@@ -225,6 +225,15 @@ class GpxWriter(Writer):
                 ET.SubElement(trk_seg, f"{tag.asx}startele").text = str(segment['start_elevation'])
             if 'end_elevation' in segment:
                 ET.SubElement(trk_seg, f"{tag.asx}endele").text = str(segment['end_elevation'])
+
+            if 'start_ascent' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}startasc").text = str(segment['start_ascent'])
+            if 'end_ascent' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}endasc").text = str(segment['end_ascent'])
+            if 'start_descent' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}startdesc").text = str(segment['start_descent'])
+            if 'end_descent' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}enddesc").text = str(segment['end_descent'])
 
             if 'start_latitude' in segment:
                 ET.SubElement(trk_seg, f"{tag.asx}startlat").text = str(segment['start_latitude'])

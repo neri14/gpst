@@ -477,6 +477,11 @@ def _calculate_segments(track: Track) -> Track:
         start_elevation: float | None = None
         end_elevation: float | None = None
 
+        start_ascent: float | None = None
+        end_ascent: float | None = None
+        start_descent: float | None = None
+        end_descent: float | None = None
+
         start_latitude: float | None = None
         start_longitude: float | None = None
         end_latitude: float | None = None
@@ -530,6 +535,18 @@ def _calculate_segments(track: Track) -> Track:
                 if start_elevation is None:
                     start_elevation = elevation
                 end_elevation = elevation
+
+            ascent = point.get('cumulative_ascent')
+            if isinstance(ascent, (int, float)):
+                if start_ascent is None:
+                    start_ascent = ascent
+                end_ascent = ascent
+            
+            descent = point.get('cumulative_descent')
+            if isinstance(descent, (int, float)):
+                if start_descent is None:
+                    start_descent = descent
+                end_descent = descent
 
             latitude = point.get('latitude')
             longitude = point.get('longitude')
@@ -621,6 +638,19 @@ def _calculate_segments(track: Track) -> Track:
         if isinstance(end_elevation, (int, float)) and 'end_elevation' not in segment:
             segment['end_elevation'] = end_elevation
             logger.trace(f"Segment {n}: end_elevation set to {end_elevation} meters")
+
+        if isinstance(start_ascent, (int, float)) and 'start_ascent' not in segment:
+            segment['start_ascent'] = start_ascent
+            logger.trace(f"Segment {n}: start_ascent set to {start_ascent} meters")
+        if isinstance(end_ascent, (int, float)) and 'end_ascent' not in segment:
+            segment['end_ascent'] = end_ascent
+            logger.trace(f"Segment {n}: end_ascent set to {end_ascent} meters")
+        if isinstance(start_descent, (int, float)) and 'start_descent' not in segment:
+            segment['start_descent'] = start_descent
+            logger.trace(f"Segment {n}: start_descent set to {start_descent} meters")
+        if isinstance(end_descent, (int, float)) and 'end_descent' not in segment:
+            segment['end_descent'] = end_descent
+            logger.trace(f"Segment {n}: end_descent set to {end_descent} meters")
 
         if (isinstance(start_latitude, (int, float)) and isinstance(start_longitude, (int, float)) and
             'start_latitude' not in segment and 'start_longitude' not in segment):
