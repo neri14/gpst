@@ -174,14 +174,14 @@ class GpxxV3Parser(BaseParser):
         return {}
 
 
-class AdxV1Parser( BaseParser):
+class AdxV11Parser( BaseParser):
     def __init__(self):
-        super().__init__(name="AdxV1Parser")
+        super().__init__(name="AdxV11Parser")
 
 
     def parse_metadata(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
         if text is None:
-            logger.warning(f"ADX V1 metadata tag \"{tag}\" has no text.")
+            logger.warning(f"ADX V11 metadata tag \"{tag}\" has no text.")
             return {}
         try:
             data: dict[str, Value] = {}
@@ -201,6 +201,10 @@ class AdxV1Parser( BaseParser):
                     data["max_grade"] = float(text)
                 case "mingrade":
                     data["min_grade"] = float(text)
+                case "maxele":
+                    data["max_elevation"] = float(text)
+                case "minele":
+                    data["min_elevation"] = float(text)
                 case "cycles":
                     data["total_cycles"] = int(text)
                 case "strokes":
@@ -248,19 +252,19 @@ class AdxV1Parser( BaseParser):
                 case "minatemp":
                     data["min_temperature"] = float(text)
                 case _:
-                    logger.debug(f"Ignored ADX V1 metadata tag: \"{tag}\"")
+                    logger.debug(f"Ignored ADX V11 metadata tag: \"{tag}\"")
 
             return data
         except ValueError as e:
-            logger.warning(f"Invalid type(s) for ADX V1 metadata tag: \"{tag}\", attribs: {attrib}, text: \"{text}\", error: {e}")
+            logger.warning(f"Invalid type(s) for ADX V11 metadata tag: \"{tag}\", attribs: {attrib}, text: \"{text}\", error: {e}")
         except Exception as e:
-            logger.warning(f"Error parsing ADX V1 metadata tag \"{tag}\": {e}")
+            logger.warning(f"Error parsing ADX V11 metadata tag \"{tag}\": {e}")
         return {}
 
 
     def parse_field(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
         if text is None:
-            logger.warning(f"ADX V1 field tag \"{tag}\" has no text.")
+            logger.warning(f"ADX V11 field tag \"{tag}\" has no text.")
             return {}
 
         try:
@@ -291,6 +295,10 @@ class AdxV1Parser( BaseParser):
                     data["accumulated_power"] = float(text)
                 case "grade":
                     data["grade"] = float(text)
+                case "asc":
+                    data["cumulative_ascent"] = float(text)
+                case "desc":
+                    data["cumulative_descent"] = float(text)
                 case "vspeed":
                     data["vertical_speed"] = float(text)
                 case "ltrqeff":
@@ -326,27 +334,27 @@ class AdxV1Parser( BaseParser):
                 case "jumpscore":
                     data["jump_score"] = float(text)
                 case _:
-                    logger.debug(f"Ignored ADX V1 field tag: \"{tag}\"")
+                    logger.debug(f"Ignored ADX V11 field tag: \"{tag}\"")
 
             return data
         except ValueError as e:
-            logger.warning(f"Invalid type(s) for ADX V1 field tag: \"{tag}\", attribs: {attrib}, text: \"{text}\", error: {e}")
+            logger.warning(f"Invalid type(s) for ADX V11 field tag: \"{tag}\", attribs: {attrib}, text: \"{text}\", error: {e}")
         except Exception as e:
-            logger.warning(f"Error parsing ADX V1 field tag \"{tag}\": {e}")
+            logger.warning(f"Error parsing ADX V11 field tag \"{tag}\": {e}")
         return {}
 
 
 
-class AsxV1Parser(BaseParser):
+class AsxV11Parser(BaseParser):
     def __init__(self):
-        super().__init__(name="AsxV1Parser", raw_parser=True)
+        super().__init__(name="AsxV11Parser", raw_parser=True)
 
 
     def parse_raw(self, element: ET.Element, track: Track) -> None:
         if not element.tag.endswith("ActivitySegmentsExtension"):
             logger.warning(f"{self.name} received unexpected element with tag {element.tag}")
 
-        logger.debug("Parsing ASX V1 activity segments...")
+        logger.debug("Parsing ASX V11 activity segments...")
         for n, segment in enumerate(element):
             if not segment.tag.endswith("segment"):
                 logger.warning(f"{self.name} encountered unexpected segment element with tag {segment.tag}")
@@ -361,7 +369,7 @@ class AsxV1Parser(BaseParser):
 
                     text: str|None = field.text
                     if text is None:
-                        logger.warning(f"ASX V1 segment field \"{field.tag}\" has no text.")
+                        logger.warning(f"ASX V11 segment field \"{field.tag}\" has no text.")
                         continue
 
                     match tag:
@@ -391,6 +399,14 @@ class AsxV1Parser(BaseParser):
                             data["start_elevation"] = float(text)
                         case "endele":
                             data["end_elevation"] = float(text)
+                        case "startasc":
+                            data["start_ascent"] = float(text)
+                        case "endasc":
+                            data["end_ascent"] = float(text)
+                        case "startdesc":
+                            data["start_descent"] = float(text)
+                        case "enddesc":
+                            data["end_descent"] = float(text)
                         case "startlat":
                             data["start_latitude"] = float(text)
                         case "startlon":
@@ -423,6 +439,10 @@ class AsxV1Parser(BaseParser):
                             data["max_grade"] = float(text)
                         case "mingrade":
                             data["min_grade"] = float(text)
+                        case "maxele":
+                            data["max_elevation"] = float(text)
+                        case "minele":
+                            data["min_elevation"] = float(text)
                         case "avgspeed":
                             data["avg_speed"] = float(text)
                         case "maxspeed":
@@ -456,16 +476,16 @@ class AsxV1Parser(BaseParser):
                         case "flow":
                             data["avg_flow"] = float(text)
                         case _:
-                            logger.debug(f"Ignored ASX V1 segment field tag: \"{field.tag}\"")
+                            logger.debug(f"Ignored ASX V11 segment field tag: \"{field.tag}\"")
                 except Exception as e:
-                    logger.warning(f"Error parsing ASX V1 segment field \"{field.tag}\": {e}")
+                    logger.warning(f"Error parsing ASX V11 segment field \"{field.tag}\": {e}")
 
             logger.trace(f"{self.name} segment {n} data: {data}")#TODO switch to trace
             track.add_segment(data)
 
 
     def parse_field(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
-        logger.debug(f"Ignored ASX V1 field tag: \"{tag}\"")
+        logger.debug(f"Ignored ASX V11 field tag: \"{tag}\"")
         return {}
 
 
@@ -533,13 +553,21 @@ _namespace = {
                         "http://www.garmin.com/xmlschemas/GpxExtensions/v3",
                         "http://www.garmin.com/xmlschemas/GpxExtensionsv3.xsd"),
 
-    "adxv1": Namespace("ActivityDataExtensions v1", AdxV1Parser(),
+    "adxv1": Namespace("ActivityDataExtensions v1", AdxV11Parser(),
                        "http://www.n3r1.com/xmlschemas/ActivityDataExtensions/v1",
                        "http://www.n3r1.com/xmlschemas/ActivityDataExtensionsv1.xsd"),
+
+    "adxv11": Namespace("ActivityDataExtensions v1.1", AdxV11Parser(),
+                        "http://www.n3r1.com/xmlschemas/ActivityDataExtensions/v11",
+                        "http://www.n3r1.com/xmlschemas/ActivityDataExtensionsv11.xsd"),
     
-    "asxv1": Namespace("ActivitySegmentsExtnsions v1", AsxV1Parser(),
+    "asxv1": Namespace("ActivitySegmentsExtnsions v1", AsxV11Parser(),
                        "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensions/v1",
                        "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensionsv1.xsd"),
+
+    "asxv11": Namespace("ActivitySegmentsExtnsions v1.1", AsxV11Parser(),
+                       "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensions/v11",
+                       "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensionsv11.xsd"),
 }
 
 namespace = SimpleNamespace(**_namespace)

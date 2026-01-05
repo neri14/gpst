@@ -15,15 +15,15 @@ namespace_urls = {
     '': "http://www.topografix.com/GPX/1/1",
     'xsi': "http://www.w3.org/2001/XMLSchema-instance",
     'tpx': "http://www.garmin.com/xmlschemas/TrackPointExtension/v2",
-    'adx': "http://www.n3r1.com/xmlschemas/ActivityDataExtensions/v1",
-    'asx': "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensions/v1"
+    'adx': "http://www.n3r1.com/xmlschemas/ActivityDataExtensions/v11",
+    'asx': "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensions/v11"
 }
 
 namespace_schemas = {
     '': "http://www.topografix.com/GPX/1/1/gpx.xsd",
     'tpx': "http://www.garmin.com/xmlschemas/TrackPointExtensionv2.xsd",
-    'adx': "http://www.n3r1.com/xmlschemas/ActivityDataExtensionsv1.xsd",
-    'asx': "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensionsv1.xsd"
+    'adx': "http://www.n3r1.com/xmlschemas/ActivityDataExtensionsv11.xsd",
+    'asx': "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensionsv11.xsd"
 }
 
 tag = SimpleNamespace(
@@ -125,6 +125,10 @@ class GpxWriter(Writer):
             ET.SubElement(trk_adx, f"{tag.adx}maxgrade").text = str(track.metadata['max_grade'])
         if 'min_grade' in track.metadata:
             ET.SubElement(trk_adx, f"{tag.adx}mingrade").text = str(track.metadata['min_grade'])
+        if 'max_elevation' in track.metadata:
+            ET.SubElement(trk_adx, f"{tag.adx}maxele").text = str(track.metadata['max_elevation'])
+        if 'min_elevation' in track.metadata:
+            ET.SubElement(trk_adx, f"{tag.adx}minele").text = str(track.metadata['min_elevation'])
         if 'total_cycles' in track.metadata:
             ET.SubElement(trk_adx, f"{tag.adx}cycles").text = str(track.metadata['total_cycles'])
         if 'total_strokes' in track.metadata:
@@ -226,6 +230,15 @@ class GpxWriter(Writer):
             if 'end_elevation' in segment:
                 ET.SubElement(trk_seg, f"{tag.asx}endele").text = str(segment['end_elevation'])
 
+            if 'start_ascent' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}startasc").text = str(segment['start_ascent'])
+            if 'end_ascent' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}endasc").text = str(segment['end_ascent'])
+            if 'start_descent' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}startdesc").text = str(segment['start_descent'])
+            if 'end_descent' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}enddesc").text = str(segment['end_descent'])
+
             if 'start_latitude' in segment:
                 ET.SubElement(trk_seg, f"{tag.asx}startlat").text = str(segment['start_latitude'])
             if 'start_longitude' in segment:
@@ -261,6 +274,11 @@ class GpxWriter(Writer):
                 ET.SubElement(trk_seg, f"{tag.asx}maxgrade").text = str(segment['max_grade'])
             if 'min_grade' in segment:
                 ET.SubElement(trk_seg, f"{tag.asx}mingrade").text = str(segment['min_grade'])
+
+            if 'max_elevation' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}maxele").text = str(segment['max_elevation'])
+            if 'min_elevation' in segment:
+                ET.SubElement(trk_seg, f"{tag.asx}minele").text = str(segment['min_elevation'])
 
             if 'avg_speed' in segment:
                 ET.SubElement(trk_seg, f"{tag.asx}avgspeed").text = str(segment['avg_speed'])
@@ -384,6 +402,10 @@ class GpxWriter(Writer):
 
         if 'grade' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}grade").text = str(data['grade'])
+        if 'cumulative_ascent' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}asc").text = str(data['cumulative_ascent'])
+        if 'cumulative_descent' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}desc").text = str(data['cumulative_descent'])
         if 'vertical_speed' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}vspeed").text = str(data['vertical_speed'])
 

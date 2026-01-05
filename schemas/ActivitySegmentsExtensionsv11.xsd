@@ -1,0 +1,211 @@
+<?xml version="1.0"?>
+<xsd:schema targetNamespace="http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensions/v1"
+  elementFormDefault="qualified"
+  xmlns="http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensions/v1"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+  <xsd:annotation><xsd:documentation>
+    This schema defines the extensions to be used with the GPX 1.1 schema.
+    The root elements defined by this schema are intended to be used as child
+    elements of the "extensions" elements in the GPX 1.1 schema. The GPX 1.1
+    schema is available at http://www.topografix.com/GPX/1/1/gpx.xsd.
+  </xsd:documentation></xsd:annotation>
+
+  <xsd:element name="ActivitySegmentsExtension" type="ActivitySegmentsExtension_t" />
+
+  <xsd:complexType name="ActivitySegmentsExtension_t">
+    <xsd:annotation><xsd:documentation>
+      This type defines the structure for the Activity Segments Extension.
+      It contains a sequence of "segment" elements,
+      each representing an individual segment.
+    </xsd:documentation></xsd:annotation>
+    <xsd:sequence>
+      <xsd:element name="segment" type="ActivitySegment_t" minOccurs="0" maxOccurs="unbounded">
+        <xsd:annotation><xsd:documentation>
+          A list of segments.
+        </xsd:documentation></xsd:annotation>
+      </xsd:element>
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <xsd:complexType name="ActivitySegment_t">
+    <xsd:annotation><xsd:documentation>
+      This type defines the structure for an individual Activity Segment.
+      It contains various optional elements to describe the segment.
+    </xsd:documentation></xsd:annotation>
+    <xsd:sequence>
+      <xsd:element name="name" type="xsd:string" minOccurs="0"/>
+      <xsd:element name="type" type="xsd:string" minOccurs="0"/> <!-- type of segment, e.g. segment, climb -->
+      <xsd:element name="source" type="xsd:string" minOccurs="0"/>
+      
+      <xsd:element name="starttime" type="xsd:dateTime" minOccurs="0"/> <!-- ISO 8601 timestamp -->
+      <xsd:element name="endtime" type="xsd:dateTime" minOccurs="0"/> <!-- ISO 8601 timestamp -->
+      
+      <xsd:element name="starttimer" type="Seconds_t" minOccurs="0"/> <!-- measured from activity start -->
+      <xsd:element name="endtimer" type="Seconds_t" minOccurs="0"/> <!-- measured from activity start -->
+      
+      <xsd:element name="startdist" type="Meters_t" minOccurs="0"/> <!-- measured from activity start -->
+      <xsd:element name="enddist" type="Meters_t" minOccurs="0"/> <!-- measured from activity start -->
+      
+      <xsd:element name="startele" type="Meters_t" minOccurs="0"/>
+      <xsd:element name="endele" type="Meters_t" minOccurs="0"/>
+      
+      <xsd:element name="startasc" type="Meters_t" minOccurs="0"/> <!-- cumulative ascent measured from activity start -->
+      <xsd:element name="endasc" type="Meters_t" minOccurs="0"/>
+      <xsd:element name="startdesc" type="Meters_t" minOccurs="0"/> <!-- cumulative descent measured from activity start -->
+      <xsd:element name="enddesc" type="Meters_t" minOccurs="0"/>
+
+      <xsd:element name="startlat" type="Latitude_t" minOccurs="0"/>
+      <xsd:element name="startlon" type="Longitude_t" minOccurs="0"/>
+      <xsd:element name="endlat" type="Latitude_t" minOccurs="0"/>
+      <xsd:element name="endlon" type="Longitude_t" minOccurs="0"/>
+
+      <xsd:element name="minlat" type="Latitude_t" minOccurs="0"/>
+      <xsd:element name="minlon" type="Longitude_t" minOccurs="0"/>
+      <xsd:element name="maxlat" type="Latitude_t" minOccurs="0"/>
+      <xsd:element name="maxlon" type="Longitude_t" minOccurs="0"/>
+
+      <xsd:element name="elapsedtime" type="Seconds_t" minOccurs="0"/>
+      <xsd:element name="timertime" type="Seconds_t" minOccurs="0"/>
+      <xsd:element name="distance" type="Meters_t" minOccurs="0"/>
+      <xsd:element name="ascent" type="Meters_t" minOccurs="0"/>
+      <xsd:element name="descent" type="Meters_t" minOccurs="0"/>
+
+      <xsd:element name="avggrade" type="Percent_t" minOccurs="0"/>
+      <xsd:element name="maxgrade" type="Percent_t" minOccurs="0"/>
+      <xsd:element name="mingrade" type="Percent_t" minOccurs="0"/>
+
+      <xsd:element name="maxele" type="Meters_t" minOccurs="0"/>
+      <xsd:element name="minele" type="Meters_t" minOccurs="0"/>
+
+      <xsd:element name="avgspeed" type="MetersPerSecond_t" minOccurs="0"/>
+      <xsd:element name="maxspeed" type="MetersPerSecond_t" minOccurs="0"/>
+
+      <xsd:element name="avgvam" type="MetersPerSecond_t" minOccurs="0"/>
+
+      <xsd:element name="avgpower" type="Watts_t" minOccurs="0"/>
+      <xsd:element name="maxpower" type="Watts_t" minOccurs="0"/>
+      <xsd:element name="normpower" type="Watts_t" minOccurs="0"/>
+
+      <xsd:element name="avghr" type="BeatsPerMinute_t" minOccurs="0"/>
+      <xsd:element name="maxhr" type="BeatsPerMinute_t" minOccurs="0"/>
+
+      <xsd:element name="avgcad" type="RevolutionsPerMinute_t" minOccurs="0"/>
+      <xsd:element name="maxcad" type="RevolutionsPerMinute_t" minOccurs="0"/>
+
+      <xsd:element name="cycles" type="Integer_t" minOccurs="0"/>
+      <xsd:element name="strokes" type="Integer_t" minOccurs="0"/>
+      <xsd:element name="work" type="Joules_t" minOccurs="0"/>
+      <xsd:element name="calories" type="Kilocalories_t" minOccurs="0"/>
+
+      <xsd:element name="grit" type="FloatingPoint_t" minOccurs="0" />
+      <xsd:element name="flow" type="FloatingPoint_t" minOccurs="0" />
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <xsd:simpleType name="Latitude_t">
+    <xsd:annotation><xsd:documentation>
+    This type contains a latitude value measured in decimal degrees.
+    Positive values indicate north latitude, and negative values indicate south latitude.
+    </xsd:documentation></xsd:annotation>
+    <xsd:restriction base="xsd:double">
+      <xsd:minInclusive value="-90"/>
+      <xsd:maxInclusive value="90"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="Longitude_t">
+    <xsd:annotation><xsd:documentation>
+    This type contains a longitude value measured in decimal degrees.
+    Positive values indicate east longitude, and negative values indicate west longitude.
+    </xsd:documentation></xsd:annotation>
+    <xsd:restriction base="xsd:double">
+      <xsd:minInclusive value="-180"/>
+      <xsd:maxInclusive value="180"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="Seconds_t">
+    <xsd:annotation><xsd:documentation>
+    This type contains a time value measured in seconds.
+    </xsd:documentation></xsd:annotation>
+    <xsd:restriction base="xsd:double"/>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="Meters_t">
+    <xsd:annotation><xsd:documentation>
+    This type contains a distance value measured in meters.
+    </xsd:documentation></xsd:annotation>
+    <xsd:restriction base="xsd:double"/>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="Joules_t">
+    <xsd:annotation><xsd:documentation>
+    This type contains an energy value measured in joules.
+    </xsd:documentation></xsd:annotation>
+    <xsd:restriction base="xsd:double"/>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="Kilocalories_t">
+    <xsd:annotation><xsd:documentation>
+    This type contains an energy value measured in kilocalories.
+    </xsd:documentation></xsd:annotation>
+    <xsd:restriction base="xsd:double"/>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="MetersPerSecond_t">
+    <xsd:annotation><xsd:documentation>
+      This type contains a speed measured in meters per second.
+    </xsd:documentation></xsd:annotation>
+    <xsd:restriction base="xsd:double"/>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="Watts_t">
+    <xsd:annotation><xsd:documentation>
+    This type contains a power value measured in watts.
+    </xsd:documentation></xsd:annotation>
+    <xsd:restriction base="xsd:double"/>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="BeatsPerMinute_t">
+    <xsd:annotation><xsd:documentation>
+    This type contains a heart rate measured in beats per minute.
+    </xsd:documentation></xsd:annotation>
+    <xsd:restriction base="xsd:unsignedByte">
+      <xsd:minInclusive value="1"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="RevolutionsPerMinute_t">
+    <xsd:annotation><xsd:documentation>
+    This type contains a cadence measured in revolutions per minute.
+    </xsd:documentation></xsd:annotation>
+    <xsd:restriction base="xsd:unsignedByte">
+  <xsd:maxInclusive value="254"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="Integer_t">
+    <xsd:annotation><xsd:documentation>
+    This type contains an integer value.
+    </xsd:documentation></xsd:annotation>
+    <xsd:restriction base="xsd:integer"/>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="FloatingPoint_t">
+    <xsd:annotation><xsd:documentation>
+    This type contains a decimal value.
+    </xsd:documentation></xsd:annotation>
+    <xsd:restriction base="xsd:double"/>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="Percent_t">
+    <xsd:annotation><xsd:documentation>
+    This type contains a percentage value (0 to 100).
+    </xsd:documentation></xsd:annotation>
+    <xsd:restriction base="xsd:decimal">
+      <xsd:minInclusive value="0"/>
+      <xsd:maxInclusive value="100"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+</xsd:schema>

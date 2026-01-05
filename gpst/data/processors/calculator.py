@@ -299,20 +299,36 @@ def _calculate_power_averages(track: Track) -> Track:
     return track
 
 
-def _calculate_smooth_elevation(track: Track, window_size: int) -> Track:
+def _calculate_elevation(track: Track, window_size: int) -> Track:
     """Calculate smooth_elevation point field using a simple moving average."""
 
     logger.debug("Calculating smooth elevation for track points...")
 
     n: int = 0
+    max_elevation: float | None = None
+    min_elevation: float | None = None
 
     for ts, point, window in track.sliding_window_iter(key='distance', size=window_size):
+        elev = point.get('elevation')
+        if isinstance(elev, (int, float)):
+            if max_elevation is None or elev > max_elevation:
+                max_elevation = elev
+            if min_elevation is None or elev < min_elevation:
+                min_elevation = elev
+
         if 'smooth_elevation' not in point:
             elevs = [p['elevation'] for p in window if 'elevation' in p and isinstance(p['elevation'], (int, float))]
             if len(elevs) > 0:
                 point['smooth_elevation'] = statistics.mean(elevs)
                 n += 1
                 logger.trace(f"Setting smooth_elevation for point at {to_string(ts)} to {point['smooth_elevation']} meters")
+
+    if isinstance(max_elevation, (int, float)) and "max_elevation" not in track.metadata:
+        track.set_metadata('max_elevation', max_elevation)
+        logger.info(f"Max elevation set to {max_elevation} meters")
+    if isinstance(min_elevation, (int, float)) and "min_elevation" not in track.metadata:
+        track.set_metadata('min_elevation', min_elevation)
+        logger.info(f"Min elevation set to {min_elevation} meters")
 
     logger.debug(f"Calculated smooth_elevation for {n} points.")
     return track
@@ -387,12 +403,9 @@ def _calculate_grade(track: Track, window_size: int) -> Track:
 
 
 def _calculate_ascent_descent(track: Track) -> Track:
-    """Calculate total_ascent, total_descent, avg_vam metadata."""
+    """Calculate cumulative ascent point field and total_ascent, total_descent, avg_vam metadata."""
 
     logger.debug("Calculating total ascent, total descent and avg_vam...")
-    if 'total_ascent' in track.metadata and 'total_descent' in track.metadata and 'avg_vam' in track.metadata:
-        logger.debug("Ascent/descent/vam metadata already present. Skipping calculation.")
-        return track
 
     total_ascent: float = 0.0
     total_descent: float = 0.0
@@ -418,6 +431,9 @@ def _calculate_ascent_descent(track: Track) -> Track:
                 time_ascending += ((ts - last_ts) if last_ts else timedelta(0))
             elif delta_elev < 0:
                 total_descent += abs(delta_elev)
+
+        point['cumulative_ascent'] = total_ascent
+        point['cumulative_descent'] = total_descent
 
         last_ts = ts
         last_elevation = elevation
@@ -477,6 +493,11 @@ def _calculate_segments(track: Track) -> Track:
         start_elevation: float | None = None
         end_elevation: float | None = None
 
+        start_ascent: float | None = None
+        end_ascent: float | None = None
+        start_descent: float | None = None
+        end_descent: float | None = None
+
         start_latitude: float | None = None
         start_longitude: float | None = None
         end_latitude: float | None = None
@@ -496,6 +517,9 @@ def _calculate_segments(track: Track) -> Track:
 
         max_grade = None
         min_grade = None
+
+        max_elevation = None
+        min_elevation = None
 
         max_speed = None
 
@@ -530,6 +554,18 @@ def _calculate_segments(track: Track) -> Track:
                 if start_elevation is None:
                     start_elevation = elevation
                 end_elevation = elevation
+
+            ascent = point.get('cumulative_ascent')
+            if isinstance(ascent, (int, float)):
+                if start_ascent is None:
+                    start_ascent = ascent
+                end_ascent = ascent
+            
+            descent = point.get('cumulative_descent')
+            if isinstance(descent, (int, float)):
+                if start_descent is None:
+                    start_descent = descent
+                end_descent = descent
 
             latitude = point.get('latitude')
             longitude = point.get('longitude')
@@ -567,6 +603,13 @@ def _calculate_segments(track: Track) -> Track:
                     max_grade = grade
                 if min_grade is None or grade < min_grade:
                     min_grade = grade
+
+            elevation = point.get('elevation')
+            if isinstance(elevation, (int, float)):
+                if max_elevation is None or elevation > max_elevation:
+                    max_elevation = elevation
+                if min_elevation is None or elevation < min_elevation:
+                    min_elevation = elevation
 
             speed = point.get('speed')
             if isinstance(speed, (int, float)):
@@ -622,6 +665,19 @@ def _calculate_segments(track: Track) -> Track:
             segment['end_elevation'] = end_elevation
             logger.trace(f"Segment {n}: end_elevation set to {end_elevation} meters")
 
+        if isinstance(start_ascent, (int, float)) and 'start_ascent' not in segment:
+            segment['start_ascent'] = start_ascent
+            logger.trace(f"Segment {n}: start_ascent set to {start_ascent} meters")
+        if isinstance(end_ascent, (int, float)) and 'end_ascent' not in segment:
+            segment['end_ascent'] = end_ascent
+            logger.trace(f"Segment {n}: end_ascent set to {end_ascent} meters")
+        if isinstance(start_descent, (int, float)) and 'start_descent' not in segment:
+            segment['start_descent'] = start_descent
+            logger.trace(f"Segment {n}: start_descent set to {start_descent} meters")
+        if isinstance(end_descent, (int, float)) and 'end_descent' not in segment:
+            segment['end_descent'] = end_descent
+            logger.trace(f"Segment {n}: end_descent set to {end_descent} meters")
+
         if (isinstance(start_latitude, (int, float)) and isinstance(start_longitude, (int, float)) and
             'start_latitude' not in segment and 'start_longitude' not in segment):
             segment['start_latitude'] = start_latitude
@@ -661,6 +717,13 @@ def _calculate_segments(track: Track) -> Track:
         if isinstance(min_grade, (int, float)) and 'min_grade' not in segment:
             segment['min_grade'] = min_grade
             logger.trace(f"Segment {n}: min_grade set to {min_grade} %")
+
+        if isinstance(max_elevation, (int, float)) and 'max_elevation' not in segment:
+            segment['max_elevation'] = max_elevation
+            logger.trace(f"Segment {n}: max_elevation set to {max_elevation} meters")
+        if isinstance(min_elevation, (int, float)) and 'min_elevation' not in segment:
+            segment['min_elevation'] = min_elevation
+            logger.trace(f"Segment {n}: min_elevation set to {min_elevation} meters")
 
         if isinstance(start_distance, (int, float)) and isinstance(end_distance, (int, float)) and \
            isinstance(start_elevation, (int, float)) and isinstance(end_elevation, (int, float)) and \
@@ -732,7 +795,7 @@ def calculate_additional_data(track: Track, elevation_smoothing_window: int, gra
     track = _calculate_speeds(track) # metadata: avg_speed, avg_track_speed, max_speed, max_track_speed, fields: speed, track_speed
     track = _calculate_vspeeds(track) # fields: vertical_speed
     track = _calculate_power_averages(track) # fields: power3s, power10s, power30s
-    track = _calculate_smooth_elevation(track, window_size=elevation_smoothing_window) # fields: smooth_elevation
+    track = _calculate_elevation(track, window_size=elevation_smoothing_window) # fields: smooth_elevation, min_elevation, max_elevation
     track = _calculate_grade(track, window_size=grade_calculation_window) # metadata: max_grade, min_grade, fields: grade
     track = _calculate_ascent_descent(track) # metadata: total_ascent, total_descent, avg_vam
     track = _calculate_misc(track) # metadata: jump_count
