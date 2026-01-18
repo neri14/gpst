@@ -77,8 +77,8 @@ def _calculate_bounds(track: Track) -> Track:
     maxlon: float | None = None
 
     for _, point in track.points_iter:
-        lat = point.get('latitude')
-        lon = point.get('longitude')
+        lat = point.get('lat')
+        lon = point.get('lon')
 
         if isinstance(lat, (int, float)) and isinstance(lon, (int, float)):
             if minlat is None or lat < minlat:
@@ -124,8 +124,8 @@ def _calculate_distances(track: Track) -> Track:
     n_t: int = 0
 
     for ts, point in track.points_iter:
-        lat = point.get('latitude')
-        lon = point.get('longitude')
+        lat = point.get('lat')
+        lon = point.get('lon')
 
         if isinstance(lat, (int, float)) and isinstance(lon, (int, float)):
             if last_lat is not None and last_lon is not None:
@@ -567,8 +567,8 @@ def _calculate_segments(track: Track) -> Track:
                     start_descent = descent
                 end_descent = descent
 
-            latitude = point.get('latitude')
-            longitude = point.get('longitude')
+            latitude = point.get('lat')
+            longitude = point.get('lon')
             if isinstance(latitude, (int, float)) and isinstance(longitude, (int, float)):
                 if start_latitude is None and start_longitude is None:
                     start_latitude = latitude

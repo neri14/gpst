@@ -132,8 +132,8 @@ def main(path: Path, dem_files: list[Path] | None = None, dem_crs: str | None = 
         track_y: list = []
 
         for _, point in track.points_iter:
-            lat = point.get('latitude')
-            lon = point.get('longitude')
+            lat = point.get('lat')
+            lon = point.get('lon')
 
             if not isinstance(lat, float) or not isinstance(lon, float):
                 logger.warning(f"Point missing location data; skipping.")

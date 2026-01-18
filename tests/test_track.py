@@ -32,8 +32,8 @@ def test_ok_upsert_point():
     timestamp_in = datetime(2024, 1, 1, 12, 0, 0)
     point_in = {
         "time": timestamp_in,
-        "latitude": 1.0,
-        "longitude": 2.0
+        "lat": 1.0,
+        "lon": 2.0
     }
     track.upsert_point(timestamp_in, point_in)
 
@@ -59,9 +59,9 @@ def test_ok_upsert_multiple_points():
         datetime(2024, 1, 1, 13, 0, 0)
     ]
     points_in = [
-        {"time": timestamps_in[0], "latitude": 1.0, "longitude": 2.0},
-        {"time": timestamps_in[1], "latitude": 3.0, "longitude": 4.0},
-        {"time": timestamps_in[2], "latitude": 5.0, "longitude": 6.0}
+        {"time": timestamps_in[0], "lat": 1.0, "lon": 2.0},
+        {"time": timestamps_in[1], "lat": 3.0, "lon": 4.0},
+        {"time": timestamps_in[2], "lat": 5.0, "lon": 6.0}
     ]
 
     for ts, pt in zip(timestamps_in, points_in):
@@ -87,8 +87,8 @@ def test_ok_upser_point_update():
     timestamp_in = datetime(2024, 1, 1, 12, 0, 0)
     point_in_1 = {
         "time": timestamp_in,
-        "latitude": 1.0,
-        "longitude": 2.0,
+        "lat": 1.0,
+        "lon": 2.0,
         "speed": 50.0
     }
     track.upsert_point(timestamp_in, point_in_1)
@@ -104,8 +104,8 @@ def test_ok_upser_point_update():
 
     expected_point = {
         "time": timestamp_in,
-        "latitude": 1.0,
-        "longitude": 2.0,
+        "lat": 1.0,
+        "lon": 2.0,
         "speed": 60.0,
         "elevation": 100.0
     }
@@ -169,11 +169,11 @@ def test_nok_point_type_verification_warnings(caplog):
     timestamp_in = datetime(2024, 1, 1, 12, 0, 0)
 
     with caplog.at_level(logging.WARNING):
-        track.upsert_point(timestamp_in, {"latitude": "not-a-float"})
+        track.upsert_point(timestamp_in, {"lat": "not-a-float"})
     assert any("Incorrect type" in record.message for record in caplog.records), "A incorrect type warning should be logged."
 
     with caplog.at_level(logging.WARNING):
-        track.upsert_point(timestamp_in, {"longitude": 190.0})
+        track.upsert_point(timestamp_in, {"lon": 190.0})
     assert any("above maximum" in record.message for record in caplog.records), "An above maximum warning should be logged."
 
     with caplog.at_level(logging.WARNING):
@@ -182,8 +182,8 @@ def test_nok_point_type_verification_warnings(caplog):
 
     point_out = track.get_point(timestamp_in)
     assert point_out is not None, "Point should exist after upsert."
-    assert point_out["latitude"] == "not-a-float", "Latitude should be stored as provided despite type warning."
-    assert point_out["longitude"] == 190.0, "Longitude should be stored as provided despite range warning."
+    assert point_out["lat"] == "not-a-float", "Latitude should be stored as provided despite type warning."
+    assert point_out["lon"] == 190.0, "Longitude should be stored as provided despite range warning."
     assert point_out["speed"] == -1.0, "Speed should be stored as provided despite range warning."
 
 
@@ -228,8 +228,8 @@ def test_nok_upsert_point_no_timestamp():
     track = Track()
 
     point_in = {
-        "latitude": 1.0,
-        "longitude": 2.0
+        "lat": 1.0,
+        "lon": 2.0
     }
 
     with pytest.raises(ValueError, match="Timestamp must be provided"):
@@ -241,8 +241,8 @@ def test_nok_upsert_point_invalid_timestamp():
 
     point_in = {
         "time": "invalid-timestamp",
-        "latitude": 1.0,
-        "longitude": 2.0
+        "lat": 1.0,
+        "lon": 2.0
     }
 
     with pytest.raises(TypeError, match="Timestamp must be a datetime object"):

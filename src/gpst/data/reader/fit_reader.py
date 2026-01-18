@@ -258,9 +258,9 @@ class FitReader(Reader):
         record_data = {'time': timestamp}
         
         if 'position_lat' in message:
-            record_data['latitude'] = message['position_lat'] * self.semicircles_factor
+            record_data['lat'] = message['position_lat'] * self.semicircles_factor
         if 'position_long' in message:
-            record_data['longitude'] = message['position_long'] * self.semicircles_factor
+            record_data['lon'] = message['position_long'] * self.semicircles_factor
 
         if 'enhanced_altitude' in message:
             record_data['elevation'] = message['enhanced_altitude']

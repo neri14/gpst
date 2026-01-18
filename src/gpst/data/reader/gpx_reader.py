@@ -673,8 +673,8 @@ class GpxReader(Reader):
         
         data: dict[str, Value] = {}
         try:
-            data['latitude'] = float(lat)
-            data['longitude'] = float(lon)
+            data['lat'] = float(lat)
+            data['lon'] = float(lon)
         except ValueError:
             logger.warning(f"Invalid latitude or longitude values: lat='{lat}', lon='{lon}'")
             return

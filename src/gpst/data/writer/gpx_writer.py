@@ -344,13 +344,13 @@ class GpxWriter(Writer):
 
 
     def _create_trkpt_element(self, trkseg: ET.Element, timestamp: datetime, data: dict) -> ET.Element | None:
-        if 'latitude' not in data or 'longitude' not in data:
+        if 'lat' not in data or 'lon' not in data:
             logger.warning("Skipping record without position when generating gpx file")
             return None
 
         trkpt = ET.SubElement(trkseg, f"{tag.gpx}trkpt",
-                              lat=str(data['latitude']),
-                              lon=str(data['longitude']))
+                              lat=str(data['lat']),
+                              lon=str(data['lon']))
         
         if 'elevation' in data:
             ET.SubElement(trkpt, f"{tag.gpx}ele").text = str(data['elevation'])

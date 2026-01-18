@@ -1,8 +1,6 @@
 # To Update
 
 ## point_fields
-latitude
-longitude
 elevation
 smooth_elevation
 heart_rate

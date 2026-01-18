@@ -86,15 +86,15 @@ class ElevationReference:
 def _generate_report_csv(report: list[dict], path: Path) -> None:
     logger.info(f"Generating elevation fix report CSV at '{path}'...")
     with path.open('w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['time', 'latitude', 'longitude', 'distance', 'old_elevation', 'new_elevation', 'correction']
+        fieldnames = ['time', 'lat', 'lon', 'distance', 'old_elevation', 'new_elevation', 'correction']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         writer.writeheader()
         for row in report:
             writer.writerow({
                 'time': row['time'],
-                'latitude': row['latitude'],
-                'longitude': row['longitude'],
+                'lat': row['lat'],
+                'lon': row['lon'],
                 'distance': row['distance'],
                 'old_elevation': row['old_elevation'],
                 'new_elevation': row['new_elevation'],
@@ -158,8 +158,8 @@ def fix_elevation(track: Track, dem_files: list[Path], dem_crs: str|None, report
 
     logger.info("Correcting elevation points.")
     for dt,point in track.points_iter:
-        lat = point.get('latitude')
-        lon = point.get('longitude')
+        lat = point.get('lat')
+        lon = point.get('lon')
 
         if not isinstance(lat, float) or not isinstance(lon, float):
             logger.warning(f"Point at {to_string(dt)} missing location data; skipping elevation fix.")
@@ -194,8 +194,8 @@ def fix_elevation(track: Track, dem_files: list[Path], dem_crs: str|None, report
 
         report.append({
             'time': dt,
-            'latitude': lat,
-            'longitude': lon,
+            'lat': lat,
+            'lon': lon,
             'distance': point.get('distance'),
             'old_elevation': old_elevation,
             'new_elevation': new_elevation,
