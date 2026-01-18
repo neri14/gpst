@@ -464,11 +464,11 @@ class AsxV11Parser(BaseParser):
                         case "maxcad":
                             data["max_cadence"] = round(float(text))
                         case "cycles":
-                            data["total_cycles"] = float(text)
+                            data["total_cycles"] = int(text)
                         case "strokes":
-                            data["total_strokes"] = float(text)
+                            data["total_strokes"] = int(text)
                         case "work":
-                            data["total_work"] = float(text)
+                            data["total_work"] = int(text)
                         case "kcal":
                             data["total_calories"] = float(text)
                         case "grit":
