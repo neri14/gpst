@@ -169,8 +169,8 @@ class GpxWriter(Writer):
         if 'min_respiration_rate' in track.metadata:
             ET.SubElement(trk_adx, f"{tag.adx}minrr").text = str(track.metadata['min_respiration_rate'])
         
-        if 'jump_count' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}jumps").text = str(track.metadata['jump_count'])
+        if 'jumps' in track.metadata:
+            ET.SubElement(trk_adx, f"{tag.adx}jumps").text = str(track.metadata['jumps'])
 
         if 'avg_heart_rate' in track.metadata:
             val = track.metadata['avg_heart_rate']

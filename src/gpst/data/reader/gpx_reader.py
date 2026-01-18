@@ -236,7 +236,7 @@ class AdxV11Parser( BaseParser):
                 case "minrr":
                     data["min_respiration_rate"] = float(text)
                 case "jumps":
-                    data["jump_count"] = int(text)
+                    data["jumps"] = int(text)
                 case "avghr":
                     data["avg_heart_rate"] = float(text)
                 case "maxhr":

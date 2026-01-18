@@ -137,7 +137,7 @@ metadata_fields = {
     'avg_respiration_rate':             respiration_rate_t,
     'max_respiration_rate':             respiration_rate_t,
     'min_respiration_rate':             respiration_rate_t,
-    'jump_count':                       int_t,
+    'jumps':                            int_t,
     'avg_right_torque_effectiveness':   percent_t,
     'avg_left_torque_effectiveness':    percent_t,
     'avg_right_pedal_smoothness':       percent_t,

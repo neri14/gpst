@@ -1,7 +1,6 @@
 # To Update
 
 ## point_fields
-timer
 timestamp
 latitude
 longitude
@@ -87,11 +86,10 @@ avg_vam
 avg_respiration_rate
 max_respiration_rate
 min_respiration_rate
-jump_count
 x  avg_right_torque_effectiveness
-avg_left_torque_effectiveness
-avg_right_pedal_smoothness
-avg_left_pedal_smoothness
+x  avg_left_torque_effectiveness
+x  avg_right_pedal_smoothness
+x  avg_left_pedal_smoothness
 avg_heart_rate
 max_heart_rate
 avg_cadence
@@ -157,9 +155,9 @@ total_strokes
 total_work
 total_calories
 x  avg_right_torque_effectiveness
-avg_left_torque_effectiveness
-avg_right_pedal_smoothness
-avg_left_pedal_smoothness
+x  avg_left_torque_effectiveness
+x  avg_right_pedal_smoothness
+x  avg_left_pedal_smoothness
 total_grit
 avg_flow
 

@@ -148,7 +148,7 @@ class FitReader(Reader):
             track.set_metadata('avg_vam', message['avg_vam'])
 
         if 'jump_count' in message:
-            track.set_metadata('jump_count', message['jump_count'])
+            track.set_metadata('jumps', message['jump_count'])
 
         if 'avg_right_torque_effectiveness' in message:
             track.set_metadata('avg_right_torque_effectiveness', message['avg_right_torque_effectiveness'])

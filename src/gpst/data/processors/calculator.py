@@ -452,19 +452,19 @@ def _calculate_ascent_descent(track: Track) -> Track:
 
 
 def _calculate_misc(track: Track) -> Track:
-    """Calculate miscellaneous metadata like jump_count."""
+    """Calculate miscellaneous metadata like jumps (jump count)."""
 
     logger.debug("Calculating miscellaneous metadata...")
 
-    jump_count: int = 0
+    jumps: int = 0
 
     for ts, point in track.points_iter:
         if any(f in point for f in ['jump_distance', 'jump_height', 'jump_rotations', 'jump_hang_time', 'jump_score']):
             logger.trace(f"Jump detected at {to_string(ts)}")
-            jump_count += 1
+            jumps += 1
 
-    track.set_metadata('jump_count', jump_count)
-    logger.info(f"Jump count set to {jump_count}")
+    track.set_metadata('jumps', jumps)
+    logger.info(f"Jumps count set to {jumps}")
 
     return track
 
@@ -798,7 +798,7 @@ def calculate_additional_data(track: Track, elevation_smoothing_window: int, gra
     track = _calculate_elevation(track, window_size=elevation_smoothing_window) # fields: smooth_elevation, min_elevation, max_elevation
     track = _calculate_grade(track, window_size=grade_calculation_window) # metadata: max_grade, min_grade, fields: grade
     track = _calculate_ascent_descent(track) # metadata: total_ascent, total_descent, avg_vam
-    track = _calculate_misc(track) # metadata: jump_count
+    track = _calculate_misc(track) # metadata: jumps
     track = _calculate_segments(track) # segments
 
     return track
