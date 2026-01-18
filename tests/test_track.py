@@ -31,7 +31,7 @@ def test_ok_upsert_point():
 
     timestamp_in = datetime(2024, 1, 1, 12, 0, 0)
     point_in = {
-        "timestamp": timestamp_in,
+        "time": timestamp_in,
         "latitude": 1.0,
         "longitude": 2.0
     }
@@ -59,9 +59,9 @@ def test_ok_upsert_multiple_points():
         datetime(2024, 1, 1, 13, 0, 0)
     ]
     points_in = [
-        {"timestamp": timestamps_in[0], "latitude": 1.0, "longitude": 2.0},
-        {"timestamp": timestamps_in[1], "latitude": 3.0, "longitude": 4.0},
-        {"timestamp": timestamps_in[2], "latitude": 5.0, "longitude": 6.0}
+        {"time": timestamps_in[0], "latitude": 1.0, "longitude": 2.0},
+        {"time": timestamps_in[1], "latitude": 3.0, "longitude": 4.0},
+        {"time": timestamps_in[2], "latitude": 5.0, "longitude": 6.0}
     ]
 
     for ts, pt in zip(timestamps_in, points_in):
@@ -86,7 +86,7 @@ def test_ok_upser_point_update():
 
     timestamp_in = datetime(2024, 1, 1, 12, 0, 0)
     point_in_1 = {
-        "timestamp": timestamp_in,
+        "time": timestamp_in,
         "latitude": 1.0,
         "longitude": 2.0,
         "speed": 50.0
@@ -103,7 +103,7 @@ def test_ok_upser_point_update():
     assert point_out is not None, "Point should exist after upsert."
 
     expected_point = {
-        "timestamp": timestamp_in,
+        "time": timestamp_in,
         "latitude": 1.0,
         "longitude": 2.0,
         "speed": 60.0,
@@ -240,13 +240,13 @@ def test_nok_upsert_point_invalid_timestamp():
     track = Track()
 
     point_in = {
-        "timestamp": "invalid-timestamp",
+        "time": "invalid-timestamp",
         "latitude": 1.0,
         "longitude": 2.0
     }
 
     with pytest.raises(TypeError, match="Timestamp must be a datetime object"):
-        track.upsert_point(point_in["timestamp"], point_in)
+        track.upsert_point(point_in["time"], point_in)
 
 def test_nok_upsert_point_invalid_data():
     track = Track()

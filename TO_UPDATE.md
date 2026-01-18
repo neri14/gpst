@@ -1,7 +1,6 @@
 # To Update
 
 ## point_fields
-timestamp
 latitude
 longitude
 elevation

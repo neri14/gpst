@@ -255,7 +255,7 @@ class FitReader(Reader):
             return
         
         timestamp = message['timestamp']
-        record_data = {'timestamp': timestamp}
+        record_data = {'time': timestamp}
         
         if 'position_lat' in message:
             record_data['latitude'] = message['position_lat'] * self.semicircles_factor

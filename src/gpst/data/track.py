@@ -52,7 +52,7 @@ unknown_t           = Type('unknown',          None,         None,              
 
 point_fields = {
     'timer':                            time_t,
-    'timestamp':                        timestamp_t,
+    'time':                             timestamp_t,
     'latitude':                         latitude_t,
     'longitude':                        longitude_t,
     'elevation':                        elevation_t,

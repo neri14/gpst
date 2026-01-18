@@ -98,7 +98,7 @@ class Gpx11Parser(BaseParser):
                 case "time":
                     ts = timestamp_from_str(text)
                     if ts is not None:
-                        data["timestamp"] = ts
+                        data["time"] = ts
                     else:
                         logger.warning(f"Invalid time format: '{text}'")
                 case "power":# for handling Strava "power" field without proper namespace
@@ -695,11 +695,11 @@ class GpxReader(Reader):
                 d = self._parse_track_point_extensions(child)
                 data.update(d)
         
-        if "timestamp" not in data or not isinstance(data["timestamp"], datetime):
+        if "time" not in data or not isinstance(data["time"], datetime):
             logger.warning("Track point missing timestamp field.")
             return
         
-        track.upsert_point(data["timestamp"], data)
+        track.upsert_point(data["time"], data)
 
 
     def _parse_track_point_extensions(self, element: ET.Element) -> dict[str, Value]:

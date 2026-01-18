@@ -86,13 +86,13 @@ class ElevationReference:
 def _generate_report_csv(report: list[dict], path: Path) -> None:
     logger.info(f"Generating elevation fix report CSV at '{path}'...")
     with path.open('w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['timestamp', 'latitude', 'longitude', 'distance', 'old_elevation', 'new_elevation', 'correction']
+        fieldnames = ['time', 'latitude', 'longitude', 'distance', 'old_elevation', 'new_elevation', 'correction']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         writer.writeheader()
         for row in report:
             writer.writerow({
-                'timestamp': row['timestamp'],
+                'time': row['time'],
                 'latitude': row['latitude'],
                 'longitude': row['longitude'],
                 'distance': row['distance'],
@@ -193,7 +193,7 @@ def fix_elevation(track: Track, dem_files: list[Path], dem_crs: str|None, report
                 correction_max = correction
 
         report.append({
-            'timestamp': dt,
+            'time': dt,
             'latitude': lat,
             'longitude': lon,
             'distance': point.get('distance'),
