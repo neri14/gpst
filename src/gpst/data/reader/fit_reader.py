@@ -308,15 +308,15 @@ class FitReader(Reader):
         if 'left_right_balance' in message:
             record_data['left_right_balance'] = message['left_right_balance']
         if 'left_torque_effectiveness' in message:
-            record_data['left_torque_effectiveness'] = message['left_torque_effectiveness']
+            record_data['ltrqeff'] = message['left_torque_effectiveness']
         if 'right_torque_effectiveness' in message:
-            record_data['right_torque_effectiveness'] = message['right_torque_effectiveness']
+            record_data['rtrqeff'] = message['right_torque_effectiveness']
         if 'left_pedal_smoothness' in message:
-            record_data['left_pedal_smoothness'] = message['left_pedal_smoothness']
+            record_data['lpdlsmooth'] = message['left_pedal_smoothness']
         if 'right_pedal_smoothness' in message:
-            record_data['right_pedal_smoothness'] = message['right_pedal_smoothness']
+            record_data['rpdlsmooth'] = message['right_pedal_smoothness']
         if 'combined_pedal_smoothness' in message:
-            record_data['combined_pedal_smoothness'] = message['combined_pedal_smoothness']
+            record_data['cpdlsmooth'] = message['combined_pedal_smoothness']
 
         if 'grit' in message:
             record_data['grit'] = message['grit']

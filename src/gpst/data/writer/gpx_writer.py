@@ -409,16 +409,16 @@ class GpxWriter(Writer):
         if 'vspeed' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}vspeed").text = str(data['vspeed'])
 
-        if 'left_torque_effectiveness' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}ltrqeff").text = str(data['left_torque_effectiveness'])
-        if 'right_torque_effectiveness' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}rtrqeff").text = str(data['right_torque_effectiveness'])
-        if 'left_pedal_smoothness' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}lpdlsmooth").text = str(data['left_pedal_smoothness'])
-        if 'right_pedal_smoothness' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}rpdlsmooth").text = str(data['right_pedal_smoothness'])
-        if 'combined_pedal_smoothness' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}cpdlsmooth").text = str(data['combined_pedal_smoothness'])
+        if 'ltrqeff' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}ltrqeff").text = str(data['ltrqeff'])
+        if 'rtrqeff' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}rtrqeff").text = str(data['rtrqeff'])
+        if 'lpdlsmooth' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}lpdlsmooth").text = str(data['lpdlsmooth'])
+        if 'rpdlsmooth' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}rpdlsmooth").text = str(data['rpdlsmooth'])
+        if 'cpdlsmooth' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}cpdlsmooth").text = str(data['cpdlsmooth'])
 
         if 'grit' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}grit").text = str(data['grit'])

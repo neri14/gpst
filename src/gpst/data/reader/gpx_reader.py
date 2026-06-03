@@ -302,15 +302,15 @@ class AdxV11Parser( BaseParser):
                 case "vspeed":
                     data['vspeed'] = float(text)
                 case "ltrqeff":
-                    data['left_torque_effectiveness'] = float(text)
+                    data['ltrqeff'] = float(text)
                 case "rtrqeff":
-                    data['right_torque_effectiveness'] = float(text)
+                    data['rtrqeff'] = float(text)
                 case "lpdlsmooth":
-                    data['left_pedal_smoothness'] = float(text)
+                    data['lpdlsmooth'] = float(text)
                 case "rpdlsmooth":
-                    data['right_pedal_smoothness'] = float(text)
+                    data['rpdlsmooth'] = float(text)
                 case "cpdlsmooth":
-                    data['combined_pedal_smoothness'] = float(text)
+                    data['cpdlsmooth'] = float(text)
                 case "grit":
                     data['grit'] = float(text)
                 case "flow":
