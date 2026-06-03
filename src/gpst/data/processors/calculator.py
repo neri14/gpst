@@ -249,7 +249,7 @@ def _calculate_vspeeds(track: Track) -> Track:
                     v_speed = (elevation - last_elevation) / (timer - last_time) if (timer - last_time) > 0 else 0.0
                     point['vspeed'] = v_speed
                     n += 1
-                    logger.trace(f"Setting vertical_speed for point at {to_string(ts)} to {v_speed} m/s")
+                    logger.trace(f"Setting vspeed for point at {to_string(ts)} to {v_speed} m/s")
 
                 last_elevation = elevation
                 last_time = timer
