@@ -35,7 +35,7 @@ power_t             = Type('power',            float,        'watts',           
 respiration_rate_t  = Type('respiration rate', float,        'breaths per minute',      'bpm',    0,        None)
 speed_t             = Type('speed',            float,        'meters per second',       'm/s',    0,        None)
 teeth_t             = Type('teeth',            int,          'number of teeth',         'teeth',  1,        None)
-temperature_t       = Type('temperature',      float,        'degrees Celsius',         '°C',     -273.15,  None)
+temperature_t       = Type('atemp',      float,        'degrees Celsius',         '°C',     -273.15,  None)
 timestamp_t         = Type('timestamp',        datetime,     None,                      None,     None,     None)
 time_t              = Type('time',             float,        'seconds',                 's',      0,        None)
 vertical_speed_t    = Type('vertical speed',   float,        'meters per second',       'm/s',    None,     None)
@@ -70,7 +70,7 @@ point_fields = {
     'grade':                            grade_t,
     'asc':                elevation_t,
     'desc':               elevation_t,
-    'temperature':                      temperature_t,
+    'atemp':                      temperature_t,
     'accumulated_power':                power_t,
     'gps_accuracy':                     distance_t,
     'vertical_speed':                   vertical_speed_t,

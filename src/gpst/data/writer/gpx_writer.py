@@ -361,8 +361,8 @@ class GpxWriter(Writer):
 
         trkpt_tpx = ET.SubElement(trkpt_ext, f"{tag.tpx}TrackPointExtension")
 
-        if 'temperature' in data:
-            ET.SubElement(trkpt_tpx, f"{tag.tpx}atemp").text = str(data['temperature'])
+        if 'atemp' in data:
+            ET.SubElement(trkpt_tpx, f"{tag.tpx}atemp").text = str(data['atemp'])
         if 'hr' in data:
             val = data['hr']
             if isinstance(val, float):

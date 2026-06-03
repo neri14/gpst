@@ -298,7 +298,7 @@ class FitReader(Reader):
         if 'grade' in message:
             record_data['grade'] = message['grade']
         if 'temperature' in message:
-            record_data['temperature'] = message['temperature']
+            record_data['atemp'] = message['temperature']
 
         if 'gps_accuracy' in message:
             record_data['gps_accuracy'] = message['gps_accuracy']

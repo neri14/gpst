@@ -129,7 +129,7 @@ class TpxV2Parser(BaseParser):
 
             match tag:
                 case "atemp":
-                    data['temperature'] = float(text)
+                    data['atemp'] = float(text)
                 case "hr":
                     data['hr'] = float(text)
                 case "cad":
@@ -162,7 +162,7 @@ class GpxxV3Parser(BaseParser):
 
             match tag:
                 case "Temperature":
-                    data['temperature'] = float(text)
+                    data['atemp'] = float(text)
                 case _:
                     logger.debug(f"Ignored GPXX V3 field tag: \"{tag}\"")
 
