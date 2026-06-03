@@ -321,7 +321,7 @@ def _calculate_elevation(track: Track, window_size: int) -> Track:
             if len(elevs) > 0:
                 point['smoothele'] = statistics.mean(elevs)
                 n += 1
-                logger.trace(f"Setting smooth_elevation for point at {to_string(ts)} to {point['smoothele']} meters")
+                logger.trace(f"Setting smoothele for point at {to_string(ts)} to {point['smoothele']} meters")
 
     if isinstance(max_elevation, (int, float)) and "max_elevation" not in track.metadata:
         track.set_metadata('max_elevation', max_elevation)
