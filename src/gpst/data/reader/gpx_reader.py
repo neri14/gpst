@@ -696,7 +696,7 @@ class GpxReader(Reader):
                 data.update(d)
         
         if "time" not in data or not isinstance(data['time'], datetime):
-            logger.warning("Track point missing timestamp field.")
+            logger.warning("Track point missing time field.")
             return
         
         track.upsert_point(data['time'], data)
