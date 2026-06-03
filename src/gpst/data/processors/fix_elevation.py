@@ -165,12 +165,12 @@ def fix_elevation(track: Track, dem_files: list[Path], dem_crs: str|None, report
             logger.warning(f"Point at {to_string(dt)} missing location data; skipping elevation fix.")
             continue
 
-        old_elevation = point.get('elevation')
+        old_elevation = point.get('ele')
         new_elevation = reference.get_elevation(lat, lon)
 
         if new_elevation is not None:
             logger.trace(f"Fixing elevation at {to_string(dt)} from {to_string(old_elevation)} to {to_string(new_elevation)}.")
-            point['elevation'] = new_elevation
+            point['ele'] = new_elevation
             cnt_fixed += 1
         else:
             cnt_not_fixed += 1

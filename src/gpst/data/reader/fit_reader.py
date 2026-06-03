@@ -263,9 +263,9 @@ class FitReader(Reader):
             record_data['lon'] = message['position_long'] * self.semicircles_factor
 
         if 'enhanced_altitude' in message:
-            record_data['elevation'] = message['enhanced_altitude']
+            record_data['ele'] = message['enhanced_altitude']
         elif 'altitude' in message:
-            record_data['elevation'] = message['altitude']
+            record_data['ele'] = message['altitude']
 
         if 'vertical_speed' in message:
             record_data['vertical_speed'] = message['vertical_speed']

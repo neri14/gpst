@@ -352,8 +352,8 @@ class GpxWriter(Writer):
                               lat=str(data['lat']),
                               lon=str(data['lon']))
         
-        if 'elevation' in data:
-            ET.SubElement(trkpt, f"{tag.gpx}ele").text = str(data['elevation'])
+        if 'ele' in data:
+            ET.SubElement(trkpt, f"{tag.gpx}ele").text = str(data['ele'])
 
         ET.SubElement(trkpt, f"{tag.gpx}time").text = to_string(timestamp)
 

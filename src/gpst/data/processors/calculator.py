@@ -239,7 +239,7 @@ def _calculate_vspeeds(track: Track) -> Track:
 
     for ts, point in track.points_iter:
         if 'vertical_speed' not in point:
-            elevation = point.get('elevation')
+            elevation = point.get('ele')
             timer = point.get('timer')
 
             if (isinstance(elevation, (int, float)) and
@@ -309,7 +309,7 @@ def _calculate_elevation(track: Track, window_size: int) -> Track:
     min_elevation: float | None = None
 
     for ts, point, window in track.sliding_window_iter(key='distance', size=window_size):
-        elev = point.get('elevation')
+        elev = point.get('ele')
         if isinstance(elev, (int, float)):
             if max_elevation is None or elev > max_elevation:
                 max_elevation = elev
@@ -317,7 +317,7 @@ def _calculate_elevation(track: Track, window_size: int) -> Track:
                 min_elevation = elev
 
         if 'smooth_elevation' not in point:
-            elevs = [p['elevation'] for p in window if 'elevation' in p and isinstance(p['elevation'], (int, float))]
+            elevs = [p['ele'] for p in window if 'ele' in p and isinstance(p['ele'], (int, float))]
             if len(elevs) > 0:
                 point['smooth_elevation'] = statistics.mean(elevs)
                 n += 1
@@ -549,7 +549,7 @@ def _calculate_segments(track: Track) -> Track:
                     start_distance = distance
                 end_distance = distance
             
-            elevation = point.get('elevation')
+            elevation = point.get('ele')
             if isinstance(elevation, (int, float)):
                 if start_elevation is None:
                     start_elevation = elevation
@@ -604,7 +604,7 @@ def _calculate_segments(track: Track) -> Track:
                 if min_grade is None or grade < min_grade:
                     min_grade = grade
 
-            elevation = point.get('elevation')
+            elevation = point.get('ele')
             if isinstance(elevation, (int, float)):
                 if max_elevation is None or elevation > max_elevation:
                     max_elevation = elevation

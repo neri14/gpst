@@ -94,7 +94,7 @@ class Gpx11Parser(BaseParser):
 
             match tag:
                 case "ele":
-                    data["elevation"] = float(text)
+                    data["ele"] = float(text)
                 case "time":
                     ts = timestamp_from_str(text)
                     if ts is not None:

@@ -95,7 +95,7 @@ def test_ok_upser_point_update():
 
     point_in_2 = {
         "speed": 60.0,
-        "elevation": 100.0
+        "ele": 100.0
     }
     track.upsert_point(timestamp_in, point_in_2)
 
@@ -107,7 +107,7 @@ def test_ok_upser_point_update():
         "lat": 1.0,
         "lon": 2.0,
         "speed": 60.0,
-        "elevation": 100.0
+        "ele": 100.0
     }
     assert compare_dicts(point_out, expected_point), "Retrieved point should reflect the updates."
 
