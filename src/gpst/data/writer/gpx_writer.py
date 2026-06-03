@@ -386,8 +386,8 @@ class GpxWriter(Writer):
 
         if 'rr' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}rr").text = str(data['rr'])
-        if 'core_temperature' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}ctemp").text = str(data['core_temperature'])
+        if 'ctemp' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}ctemp").text = str(data['ctemp'])
 
         if 'power' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}power").text = str(data['power'])
@@ -428,14 +428,14 @@ class GpxWriter(Writer):
         if 'climb' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}climb").text = str(data['climb'])
 
-        if 'front_gear_num' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}fgearnum").text = str(data['front_gear_num'])
-        if 'front_gear' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}fgear").text = str(data['front_gear'])
-        if 'rear_gear_num' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}rgearnum").text = str(data['rear_gear_num'])
-        if 'rear_gear' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}rgear").text = str(data['rear_gear'])
+        if 'fgearnum' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}fgearnum").text = str(data['fgearnum'])
+        if 'fgear' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}fgear").text = str(data['fgear'])
+        if 'rgearnum' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}rgearnum").text = str(data['rgearnum'])
+        if 'rgear' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}rgear").text = str(data['rgear'])
 
         if 'jumpdist' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}jumpdist").text = str(data['jumpdist'])

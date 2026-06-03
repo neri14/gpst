@@ -282,7 +282,7 @@ class AdxV11Parser( BaseParser):
                 case "rr":
                     data['rr'] = float(text)
                 case "ctemp":
-                    data['core_temperature'] = float(text)
+                    data['ctemp'] = float(text)
                 case "power":
                     data['power'] = float(text)
                 case "power3s":
@@ -318,13 +318,13 @@ class AdxV11Parser( BaseParser):
                 case "climb":
                     data['climb'] = int(text)
                 case "fgearnum":
-                    data['front_gear_num'] = int(text)
+                    data['fgearnum'] = int(text)
                 case "fgear":
-                    data['front_gear'] = int(text)
+                    data['fgear'] = int(text)
                 case "rgearnum":
-                    data['rear_gear_num'] = int(text)
+                    data['rgearnum'] = int(text)
                 case "rgear":
-                    data['rear_gear'] = int(text)
+                    data['rgear'] = int(text)
                 case "jumpdist":
                     data['jumpdist'] = float(text)
                 case "jumpheight":

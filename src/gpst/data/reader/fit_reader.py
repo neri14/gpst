@@ -288,7 +288,7 @@ class FitReader(Reader):
             record_data['rr'] = message['respiration_rate']
 
         if 'core_temperature' in message:
-            record_data['core_temperature'] = message['core_temperature']
+            record_data['ctemp'] = message['core_temperature']
 
         if 'power' in message:
             record_data['power'] = message['power']
@@ -349,20 +349,20 @@ class FitReader(Reader):
         if message['event'] == 'front_gear_change' and message['event_type'] == 'marker':
             front_gear_num = message.get('front_gear_num', None)
             if isinstance(front_gear_num, int) and 0 < front_gear_num < 255:
-                data['front_gear_num'] = front_gear_num
+                data['fgearnum'] = front_gear_num
 
             front_gear = message.get('front_gear', None)
             if isinstance(front_gear, int) and 0 < front_gear < 255:
-                data['front_gear'] = front_gear
+                data['fgear'] = front_gear
 
         if message['event'] == 'rear_gear_change' and message['event_type'] == 'marker':
             rear_gear_num = message.get('rear_gear_num', None)
             if isinstance(rear_gear_num, int) and 0 < rear_gear_num < 255:
-                data['rear_gear_num'] = rear_gear_num
+                data['rgearnum'] = rear_gear_num
 
             rear_gear = message.get('rear_gear', None)
             if isinstance(rear_gear, int) and 0 < rear_gear < 255:
-                data['rear_gear'] = rear_gear
+                data['rgear'] = rear_gear
 
         if len(data) > 0:
             timestamp = message['timestamp']

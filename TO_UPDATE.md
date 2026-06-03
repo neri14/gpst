@@ -1,9 +1,6 @@
 # To Update
 
 ## point_fields
-respiration_rate+
-grit+
-flow+
 core_temperature+
 front_gear_num+
 front_gear+
