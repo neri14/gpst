@@ -1,16 +1,5 @@
 # To Update
 
-## point_fields
-core_temperature+
-front_gear_num+
-front_gear+
-rear_gear_num+
-rear_gear+
-
-
-
-
-
 ## metadata_fields
 start_time
 end_time

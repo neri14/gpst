@@ -120,23 +120,23 @@ def test_ok_metadata():
 
     assert len(track.metadata) == 0, "New track should have empty metadata."
 
-    track.metadata["name"] = "Test Track"
-    track.metadata["description"] = "This is a test track."
+    track.metadata['name'] = "Test Track"
+    track.metadata['description'] = "This is a test track."
 
     assert len(track.metadata) == 2, "Track metadata should have two entries after setting."
 
-    assert track.metadata["name"] == "Test Track", "Metadata 'name' should be set correctly."
-    assert track.metadata["description"] == "This is a test track.", "Metadata 'description' should be set correctly."
+    assert track.metadata['name'] == "Test Track", "Metadata 'name' should be set correctly."
+    assert track.metadata['description'] == "This is a test track.", "Metadata 'description' should be set correctly."
 
 
 def test_ok_metadata_update():
     track = Track()
 
-    track.metadata["name"] = "Initial Name"
-    assert track.metadata["name"] == "Initial Name", "Metadata 'name' should be set correctly."
+    track.metadata['name'] = "Initial Name"
+    assert track.metadata['name'] == "Initial Name", "Metadata 'name' should be set correctly."
 
-    track.metadata["name"] = "Updated Name"
-    assert track.metadata["name"] == "Updated Name", "Metadata 'name' should be updated correctly."
+    track.metadata['name'] = "Updated Name"
+    assert track.metadata['name'] == "Updated Name", "Metadata 'name' should be updated correctly."
 
 
 
@@ -149,16 +149,16 @@ def test_ok_point_int_to_float_conversion():
 
     point_out = track.get_point(timestamp_in)
     assert point_out is not None, "Point should exist after upsert."
-    assert isinstance(point_out["speed"], float), "Point 'speed' should be of type float."
-    assert point_out["speed"] == 30.0, "Point 'speed' should be converted to float."
+    assert isinstance(point_out['speed'], float), "Point 'speed' should be of type float."
+    assert point_out['speed'] == 30.0, "Point 'speed' should be converted to float."
 
 
 def test_ok_metadata_int_to_float_conversion():
     track = Track()
 
     track.set_metadata("avg_speed", 45)
-    assert isinstance(track.metadata["avg_speed"], float), "Metadata 'avg_speed' should be of type float."
-    assert track.metadata["avg_speed"] == 45.0, "Metadata 'avg_speed' should be converted to float."
+    assert isinstance(track.metadata['avg_speed'], float), "Metadata 'avg_speed' should be of type float."
+    assert track.metadata['avg_speed'] == 45.0, "Metadata 'avg_speed' should be converted to float."
 
 
 LOGGER = logging.getLogger(__name__)
@@ -182,9 +182,9 @@ def test_nok_point_type_verification_warnings(caplog):
 
     point_out = track.get_point(timestamp_in)
     assert point_out is not None, "Point should exist after upsert."
-    assert point_out["lat"] == "not-a-float", "Latitude should be stored as provided despite type warning."
-    assert point_out["lon"] == 190.0, "Longitude should be stored as provided despite range warning."
-    assert point_out["speed"] == -1.0, "Speed should be stored as provided despite range warning."
+    assert point_out['lat'] == "not-a-float", "Latitude should be stored as provided despite type warning."
+    assert point_out['lon'] == 190.0, "Longitude should be stored as provided despite range warning."
+    assert point_out['speed'] == -1.0, "Speed should be stored as provided despite range warning."
 
 
 def test_nok_metadata_type_verification_warnings(caplog):
@@ -202,9 +202,9 @@ def test_nok_metadata_type_verification_warnings(caplog):
         track.set_metadata("maxlon", 200.0)
     assert any("above maximum" in record.message for record in caplog.records), "An above maximum warning should be logged for metadata."
 
-    assert track.metadata["start_time"] == "not-a-datetime", "Metadata 'start_time' should be stored as provided despite type warning."
-    assert track.metadata["minlat"] == -100.0, "Metadata 'minlat' should be stored as provided despite range warning."
-    assert track.metadata["maxlon"] == 200.0, "Metadata 'maxlon' should be stored as provided despite range warning."
+    assert track.metadata['start_time'] == "not-a-datetime", "Metadata 'start_time' should be stored as provided despite type warning."
+    assert track.metadata['minlat'] == -100.0, "Metadata 'minlat' should be stored as provided despite range warning."
+    assert track.metadata['maxlon'] == 200.0, "Metadata 'maxlon' should be stored as provided despite range warning."
 
 
 def test_nok_add_unkown_point_field_warnings(caplog):
@@ -246,13 +246,13 @@ def test_nok_upsert_point_invalid_timestamp():
     }
 
     with pytest.raises(TypeError, match="Timestamp must be a datetime object"):
-        track.upsert_point(point_in["time"], point_in)
+        track.upsert_point(point_in['time'], point_in)
 
 def test_nok_upsert_point_invalid_data():
     track = Track()
 
     timestamp_in = datetime(2024, 1, 1, 12, 0, 0)
-    invalid_data = ["not", "a", "dict"]
+    invalid_data = ['not', "a", "dict"]
 
     with pytest.raises(TypeError, match="Data must be a dictionary"):
         track.upsert_point(timestamp_in, invalid_data)
