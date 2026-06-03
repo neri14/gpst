@@ -25,7 +25,7 @@ class SegmentType(StrEnum):
 
 cadence_t           = Type('cad',          int,          'revolutions per minute',  'rpm',    0,        None)
 calories_t          = Type('calories',         float,        'kilocalories',            'kcal',   0,        None)
-distance_t          = Type('distance',         float,        'meters',                  'm',      0,        None)
+distance_t          = Type('dist',         float,        'meters',                  'm',      0,        None)
 elevation_t         = Type('ele',              float,        'meters',                  'm',      None,     None)
 grade_t             = Type('grade',            float,        'percent',                 '%',      None,     None)
 heart_rate_t        = Type('heart rate',       float,        'beats per minute',        'bpm',    0,        None)
@@ -59,7 +59,7 @@ point_fields = {
     'smoothele':                 elevation_t,
     'hr':                       heart_rate_t,
     'cad':                          cadence_t,
-    'distance':                         distance_t,
+    'dist':                         distance_t,
     'track_distance':                   distance_t,
     'speed':                            speed_t,
     'track_speed':                      speed_t,

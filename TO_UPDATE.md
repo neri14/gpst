@@ -1,9 +1,6 @@
 # To Update
 
 ## point_fields
-heart_rate+
-cadence+
-distance+
 temperature+
 accumulated_power+
 vertical_speed+

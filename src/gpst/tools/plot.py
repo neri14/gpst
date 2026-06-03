@@ -15,14 +15,14 @@ from ..utils.logger import logger
 
 
 conversion_factors = {
-    'distance':       0.001, # meters to kilometers
+    'dist':       0.001, # meters to kilometers
     'track_distance': 0.001, # meters to kilometers
     'speed':          3.6,   # m/s to km/h
     'track_speed':    3.6,   # m/s to km/h
 }
 
 converted_units = {
-    'distance':       'km',
+    'dist':       'km',
     'track_distance': 'km',
     'speed':          'km/h',
     'track_speed':    'km/h',

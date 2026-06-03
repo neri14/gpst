@@ -276,7 +276,7 @@ class FitReader(Reader):
             record_data['speed'] = message['speed']
 
         if 'distance' in message:
-            record_data['distance'] = message['distance']
+            record_data['dist'] = message['distance']
         if 'heart_rate' in message:
             record_data['hr'] = message['heart_rate']
         if 'cadence' in message:

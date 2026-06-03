@@ -276,7 +276,7 @@ class AdxV11Parser( BaseParser):
                 case "smoothele":
                     data['smoothele'] = float(text)
                 case "dist":
-                    data['distance'] = float(text)
+                    data['dist'] = float(text)
                 case "kcal":
                     data['calories'] = float(text) 
                 case "rr":

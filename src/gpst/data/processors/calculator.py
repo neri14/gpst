@@ -137,8 +137,8 @@ def _calculate_distances(track: Track) -> Track:
             point['track_distance'] = total_distance
             n_t += 1
             logger.trace(f"Setting track_distance for point at {to_string(ts)} to {total_distance} meters")
-            if 'distance' not in point:
-                point['distance'] = total_distance
+            if 'dist' not in point:
+                point['dist'] = total_distance
                 n += 1
                 logger.trace(f"Setting distance for point at {to_string(ts)} to {total_distance} meters")
 
@@ -168,7 +168,7 @@ def _calculate_speeds(track: Track) -> Track:
     n: int = 0
     n_t: int = 0
     for ts, point in track.points_iter:
-        distance = point.get('distance')
+        distance = point.get('dist')
         timer = point.get('timer')
 
         if (isinstance(distance, (int, float)) and isinstance(timer, (int, float))):
@@ -308,7 +308,7 @@ def _calculate_elevation(track: Track, window_size: int) -> Track:
     max_elevation: float | None = None
     min_elevation: float | None = None
 
-    for ts, point, window in track.sliding_window_iter(key='distance', size=window_size):
+    for ts, point, window in track.sliding_window_iter(key='dist', size=window_size):
         elev = point.get('ele')
         if isinstance(elev, (int, float)):
             if max_elevation is None or elev > max_elevation:
@@ -342,7 +342,7 @@ def _calculate_grade(track: Track, window_size: int) -> Track:
     min_grade_window = MIN_GRADE_WINDOW * window_size
 
     alt_key = 'smoothele'
-    dist_key = 'distance'
+    dist_key = 'dist'
 
     max_grade: float | None = None
     min_grade: float | None = None
@@ -416,7 +416,7 @@ def _calculate_ascent_descent(track: Track) -> Track:
 
     for ts, point in track.points_iter:
         elevation = point.get('smoothele')
-        distance = point.get('distance')
+        distance = point.get('dist')
 
         if not isinstance(elevation, (int, float)) or not isinstance(distance, (int, float)):
             logger.error(f"Point at {to_string(ts)} missing elevation or distance cancelling ascent/descent calculation.")
@@ -543,7 +543,7 @@ def _calculate_segments(track: Track) -> Track:
                     start_timer = timer
                 end_timer = timer
 
-            distance = point.get('distance')
+            distance = point.get('dist')
             if isinstance(distance, (int, float)):
                 if start_distance is None:
                     start_distance = distance

@@ -86,7 +86,7 @@ class ElevationReference:
 def _generate_report_csv(report: list[dict], path: Path) -> None:
     logger.info(f"Generating elevation fix report CSV at '{path}'...")
     with path.open('w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['time', 'lat', 'lon', 'distance', 'old_elevation', 'new_elevation', 'correction']
+        fieldnames = ['time', 'lat', 'lon', 'dist', 'old_elevation', 'new_elevation', 'correction']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         writer.writeheader()
@@ -95,7 +95,7 @@ def _generate_report_csv(report: list[dict], path: Path) -> None:
                 'time': row['time'],
                 'lat': row['lat'],
                 'lon': row['lon'],
-                'distance': row['distance'],
+                'dist': row['dist'],
                 'old_elevation': row['old_elevation'],
                 'new_elevation': row['new_elevation'],
                 'correction': row['correction']
@@ -109,7 +109,7 @@ def _generate_report_png(report: list[dict], path: Path) -> None:
         for c in mpl.color_sequences['tab10']:
             yield c
 
-    x = [row['distance']/1000 for row in report]
+    x = [row['dist']/1000 for row in report]
     y1 = [row['old_elevation'] for row in report]
     y2 = [row['new_elevation'] for row in report]
     yright = [row['correction'] for row in report]
@@ -196,7 +196,7 @@ def fix_elevation(track: Track, dem_files: list[Path], dem_crs: str|None, report
             'time': dt,
             'lat': lat,
             'lon': lon,
-            'distance': point.get('distance'),
+            'dist': point.get('dist'),
             'old_elevation': old_elevation,
             'new_elevation': new_elevation,
             'correction': correction
