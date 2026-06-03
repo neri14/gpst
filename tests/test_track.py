@@ -252,7 +252,7 @@ def test_nok_upsert_point_invalid_data():
     track = Track()
 
     timestamp_in = datetime(2024, 1, 1, 12, 0, 0)
-    invalid_data = ['not', "a", "dict"]
+    invalid_data = ["not", "a", "dict"]
 
     with pytest.raises(TypeError, match="Data must be a dictionary"):
         track.upsert_point(timestamp_in, invalid_data)
