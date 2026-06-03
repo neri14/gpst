@@ -23,9 +23,9 @@ class SegmentType(StrEnum):
     SEGMENT='segment'
     CLIMB='climb'
 
-cadence_t           = Type('cad',          int,          'revolutions per minute',  'rpm',    0,        None)
-calories_t          = Type('kcal',         float,        'kilocalories',            'kcal',   0,        None)
-distance_t          = Type('dist',         float,        'meters',                  'm',      0,        None)
+cadence_t           = Type('cad',              int,          'revolutions per minute',  'rpm',    0,        None)
+calories_t          = Type('kcal',             float,        'kilocalories',            'kcal',   0,        None)
+distance_t          = Type('dist',             float,        'meters',                  'm',      0,        None)
 elevation_t         = Type('ele',              float,        'meters',                  'm',      None,     None)
 grade_t             = Type('grade',            float,        'percent',                 '%',      None,     None)
 heart_rate_t        = Type('heart rate',       float,        'beats per minute',        'bpm',    0,        None)
@@ -35,7 +35,7 @@ power_t             = Type('power',            float,        'watts',           
 respiration_rate_t  = Type('respiration rate', float,        'breaths per minute',      'bpm',    0,        None)
 speed_t             = Type('speed',            float,        'meters per second',       'm/s',    0,        None)
 teeth_t             = Type('teeth',            int,          'number of teeth',         'teeth',  1,        None)
-temperature_t       = Type('atemp',      float,        'degrees Celsius',         '°C',     -273.15,  None)
+temperature_t       = Type('atemp',            float,        'degrees Celsius',         '°C',     -273.15,  None)
 timestamp_t         = Type('timestamp',        datetime,     None,                      None,     None,     None)
 time_t              = Type('time',             float,        'seconds',                 's',      0,        None)
 vertical_speed_t    = Type('vertical speed',   float,        'meters per second',       'm/s',    None,     None)
@@ -56,10 +56,10 @@ point_fields = {
     'lat':                              latitude_t,
     'lon':                              longitude_t,
     'ele':                              elevation_t,
-    'smoothele':                 elevation_t,
-    'hr':                       heart_rate_t,
-    'cad':                          cadence_t,
-    'dist':                         distance_t,
+    'smoothele':                        elevation_t,
+    'hr':                               heart_rate_t,
+    'cad':                              cadence_t,
+    'dist':                             distance_t,
     'track_distance':                   distance_t,
     'speed':                            speed_t,
     'track_speed':                      speed_t,
@@ -68,32 +68,32 @@ point_fields = {
     'power10s':                         power_t,
     'power30s':                         power_t,
     'grade':                            grade_t,
-    'asc':                elevation_t,
-    'desc':               elevation_t,
-    'atemp':                      temperature_t,
-    'accpower':                power_t,
+    'asc':                              elevation_t,
+    'desc':                             elevation_t,
+    'atemp':                            temperature_t,
+    'accpower':                         power_t,
     'gps_accuracy':                     distance_t,
-    'vspeed':                   vertical_speed_t,
-    'kcal':                         calories_t,
-    'ltrqeff':        percent_t,
-    'rtrqeff':       percent_t,
-    'lpdlsmooth':            percent_t,
-    'rpdlsmooth':           percent_t,
-    'cpdlsmooth':        percent_t,
-    'rr':                 respiration_rate_t,
+    'vspeed':                           vertical_speed_t,
+    'kcal':                             calories_t,
+    'ltrqeff':                          percent_t,
+    'rtrqeff':                          percent_t,
+    'lpdlsmooth':                       percent_t,
+    'rpdlsmooth':                       percent_t,
+    'cpdlsmooth':                       percent_t,
+    'rr':                               respiration_rate_t,
     'grit':                             float_t,
     'flow':                             float_t,
-    'ctemp':                 temperature_t,
-    'fgearnum':                   int_t,
-    'fgear':                       teeth_t,
-    'rgearnum':                    int_t,
-    'rgear':                        teeth_t,
-    'climb':                     int_t,
-    'jumpdist':                    distance_t,
-    'jumpheight':                      distance_t,
-    'jumprotations':                   int_t,
-    'jumptime':                   time_t,
-    'jumpscore':                       float_t,
+    'ctemp':                            temperature_t,
+    'fgearnum':                         int_t,
+    'fgear':                            teeth_t,
+    'rgearnum':                         int_t,
+    'rgear':                            teeth_t,
+    'climb':                            int_t,
+    'jumpdist':                         distance_t,
+    'jumpheight':                       distance_t,
+    'jumprotations':                    int_t,
+    'jumptime':                         time_t,
+    'jumpscore':                        float_t,
 }
 
 metadata_fields = {
