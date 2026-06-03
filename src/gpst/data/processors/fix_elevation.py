@@ -176,8 +176,8 @@ def fix_elevation(track: Track, dem_files: list[Path], dem_crs: str|None, report
             cnt_not_fixed += 1
 
         #cleanup elevation dependant data
-        if 'smooth_elevation' in point:
-            del point['smooth_elevation']
+        if 'smoothele' in point:
+            del point['smoothele']
         if 'grade' in point:
             del point['grade']
         if 'vertical_speed' in point:

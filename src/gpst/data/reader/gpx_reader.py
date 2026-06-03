@@ -274,7 +274,7 @@ class AdxV11Parser( BaseParser):
                 case "timer":
                     data["timer"] = float(text)
                 case  "smoothele":
-                    data["smooth_elevation"] = float(text)
+                    data["smoothele"] = float(text)
                 case "dist":
                     data["distance"] = float(text)
                 case "kcal":

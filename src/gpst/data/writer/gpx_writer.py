@@ -377,8 +377,8 @@ class GpxWriter(Writer):
 
         if 'timer' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}timer").text = str(data['timer'])
-        if 'smooth_elevation' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}smoothele").text = str(data['smooth_elevation'])
+        if 'smoothele' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}smoothele").text = str(data['smoothele'])
         if 'distance' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}dist").text = str(data['distance'])
         if 'calories' in data:

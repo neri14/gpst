@@ -1,8 +1,6 @@
 # To Update
 
 ## point_fields
-elevation
-smooth_elevation
 heart_rate
 cadence
 distance

@@ -316,12 +316,12 @@ def _calculate_elevation(track: Track, window_size: int) -> Track:
             if min_elevation is None or elev < min_elevation:
                 min_elevation = elev
 
-        if 'smooth_elevation' not in point:
+        if 'smoothele' not in point:
             elevs = [p['ele'] for p in window if 'ele' in p and isinstance(p['ele'], (int, float))]
             if len(elevs) > 0:
-                point['smooth_elevation'] = statistics.mean(elevs)
+                point['smoothele'] = statistics.mean(elevs)
                 n += 1
-                logger.trace(f"Setting smooth_elevation for point at {to_string(ts)} to {point['smooth_elevation']} meters")
+                logger.trace(f"Setting smooth_elevation for point at {to_string(ts)} to {point['smoothele']} meters")
 
     if isinstance(max_elevation, (int, float)) and "max_elevation" not in track.metadata:
         track.set_metadata('max_elevation', max_elevation)
@@ -341,7 +341,7 @@ def _calculate_grade(track: Track, window_size: int) -> Track:
 
     min_grade_window = MIN_GRADE_WINDOW * window_size
 
-    alt_key = 'smooth_elevation'
+    alt_key = 'smoothele'
     dist_key = 'distance'
 
     max_grade: float | None = None
@@ -415,7 +415,7 @@ def _calculate_ascent_descent(track: Track) -> Track:
     last_elevation: float | None = None
 
     for ts, point in track.points_iter:
-        elevation = point.get('smooth_elevation')
+        elevation = point.get('smoothele')
         distance = point.get('distance')
 
         if not isinstance(elevation, (int, float)) or not isinstance(distance, (int, float)):
@@ -585,7 +585,7 @@ def _calculate_segments(track: Track) -> Track:
                 if maxlon is None or longitude > maxlon:
                     maxlon = longitude
 
-            smooth_elevation = point.get('smooth_elevation')
+            smooth_elevation = point.get('smoothele')
             if isinstance(smooth_elevation, (int, float)) and isinstance(distance, (int, float)):
                 if last_elevation is not None and last_ts is not None:
                     delta_elev = smooth_elevation - last_elevation
