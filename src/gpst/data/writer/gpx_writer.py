@@ -368,8 +368,8 @@ class GpxWriter(Writer):
             if isinstance(val, float):
                 val = round(val)
             ET.SubElement(trkpt_tpx, f"{tag.tpx}hr").text = str(val)
-        if 'cadence' in data:
-            ET.SubElement(trkpt_tpx, f"{tag.tpx}cad").text = str(data['cadence'])
+        if 'cad' in data:
+            ET.SubElement(trkpt_tpx, f"{tag.tpx}cad").text = str(data['cad'])
         if 'speed' in data:
             ET.SubElement(trkpt_tpx, f"{tag.tpx}speed").text = str(data['speed'])
 

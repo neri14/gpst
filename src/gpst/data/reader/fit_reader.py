@@ -280,7 +280,7 @@ class FitReader(Reader):
         if 'heart_rate' in message:
             record_data['hr'] = message['heart_rate']
         if 'cadence' in message:
-            record_data['cadence'] = message['cadence']
+            record_data['cad'] = message['cadence']
 
         if 'enhanced_respiration_rate' in message:
             record_data['respiration_rate'] = message['enhanced_respiration_rate']

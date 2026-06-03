@@ -133,7 +133,7 @@ class TpxV2Parser(BaseParser):
                 case "hr":
                     data['hr'] = float(text)
                 case "cad":
-                    data['cadence'] = int(text)
+                    data['cad'] = int(text)
                 case "speed":
                     data['speed'] = float(text)
                 case _:

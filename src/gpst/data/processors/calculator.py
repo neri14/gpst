@@ -630,7 +630,7 @@ def _calculate_segments(track: Track) -> Track:
             if isinstance(heart_rate, (int, float)):
                 heart_rates.append(heart_rate)
 
-            cadence = point.get('cadence')
+            cadence = point.get('cad')
             if isinstance(cadence, (int, float)):
                 cadences.append(cadence)
 
