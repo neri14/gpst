@@ -51,10 +51,10 @@ class FitReader(Reader):
             logger.error(f"Failed to read fit file: {e}")
             return None
 
-        if isinstance(metacache.get('climb_start'), datetime.datetime) and isinstance(cache.get('active_climb'), int):
+        if isinstance(metacache.get('climb_start'), datetime.datetime) and isinstance(cache.get('climb'), int):
             logger.info("Fit file ended while a ClimbPro climb was still active. Finalizing climb segment.")
             track.add_segment({
-                'name': f"Climb {cache['active_climb']}",
+                'name': f"Climb {cache['climb']}",
                 'source': 'climbpro',
                 'type': SegmentType.CLIMB,
                 'start_time': metacache['climb_start'],
@@ -148,7 +148,7 @@ class FitReader(Reader):
             track.set_metadata('avg_vam', message['avg_vam'])
 
         if 'jump_count' in message:
-            track.set_metadata('jump_count', message['jump_count'])
+            track.set_metadata('jumps', message['jump_count'])
 
         if 'avg_right_torque_effectiveness' in message:
             track.set_metadata('avg_right_torque_effectiveness', message['avg_right_torque_effectiveness'])
@@ -255,20 +255,20 @@ class FitReader(Reader):
             return
         
         timestamp = message['timestamp']
-        record_data = {'timestamp': timestamp}
+        record_data = {'time': timestamp}
         
         if 'position_lat' in message:
-            record_data['latitude'] = message['position_lat'] * self.semicircles_factor
+            record_data['lat'] = message['position_lat'] * self.semicircles_factor
         if 'position_long' in message:
-            record_data['longitude'] = message['position_long'] * self.semicircles_factor
+            record_data['lon'] = message['position_long'] * self.semicircles_factor
 
         if 'enhanced_altitude' in message:
-            record_data['elevation'] = message['enhanced_altitude']
+            record_data['ele'] = message['enhanced_altitude']
         elif 'altitude' in message:
-            record_data['elevation'] = message['altitude']
+            record_data['ele'] = message['altitude']
 
         if 'vertical_speed' in message:
-            record_data['vertical_speed'] = message['vertical_speed']
+            record_data['vspeed'] = message['vertical_speed']
 
         if 'enhanced_speed' in message:
             record_data['speed'] = message['enhanced_speed']
@@ -276,47 +276,47 @@ class FitReader(Reader):
             record_data['speed'] = message['speed']
 
         if 'distance' in message:
-            record_data['distance'] = message['distance']
+            record_data['dist'] = message['distance']
         if 'heart_rate' in message:
-            record_data['heart_rate'] = message['heart_rate']
+            record_data['hr'] = message['heart_rate']
         if 'cadence' in message:
-            record_data['cadence'] = message['cadence']
+            record_data['cad'] = message['cadence']
 
         if 'enhanced_respiration_rate' in message:
-            record_data['respiration_rate'] = message['enhanced_respiration_rate']
+            record_data['rr'] = message['enhanced_respiration_rate']
         elif 'respiration_rate' in message:
-            record_data['respiration_rate'] = message['respiration_rate']
+            record_data['rr'] = message['respiration_rate']
 
         if 'core_temperature' in message:
-            record_data['core_temperature'] = message['core_temperature']
+            record_data['ctemp'] = message['core_temperature']
 
         if 'power' in message:
             record_data['power'] = message['power']
         if 'accumulated_power' in message:
-            record_data['accumulated_power'] = message['accumulated_power']
+            record_data['accpower'] = message['accumulated_power']
 
         if 'grade' in message:
             record_data['grade'] = message['grade']
         if 'temperature' in message:
-            record_data['temperature'] = message['temperature']
+            record_data['atemp'] = message['temperature']
 
         if 'gps_accuracy' in message:
             record_data['gps_accuracy'] = message['gps_accuracy']
         if 'calories' in message:
-            record_data['calories'] = message['calories']
+            record_data['kcal'] = message['calories']
 
         if 'left_right_balance' in message:
             record_data['left_right_balance'] = message['left_right_balance']
         if 'left_torque_effectiveness' in message:
-            record_data['left_torque_effectiveness'] = message['left_torque_effectiveness']
+            record_data['ltrqeff'] = message['left_torque_effectiveness']
         if 'right_torque_effectiveness' in message:
-            record_data['right_torque_effectiveness'] = message['right_torque_effectiveness']
+            record_data['rtrqeff'] = message['right_torque_effectiveness']
         if 'left_pedal_smoothness' in message:
-            record_data['left_pedal_smoothness'] = message['left_pedal_smoothness']
+            record_data['lpdlsmooth'] = message['left_pedal_smoothness']
         if 'right_pedal_smoothness' in message:
-            record_data['right_pedal_smoothness'] = message['right_pedal_smoothness']
+            record_data['rpdlsmooth'] = message['right_pedal_smoothness']
         if 'combined_pedal_smoothness' in message:
-            record_data['combined_pedal_smoothness'] = message['combined_pedal_smoothness']
+            record_data['cpdlsmooth'] = message['combined_pedal_smoothness']
 
         if 'grit' in message:
             record_data['grit'] = message['grit']
@@ -349,20 +349,20 @@ class FitReader(Reader):
         if message['event'] == 'front_gear_change' and message['event_type'] == 'marker':
             front_gear_num = message.get('front_gear_num', None)
             if isinstance(front_gear_num, int) and 0 < front_gear_num < 255:
-                data['front_gear_num'] = front_gear_num
+                data['fgearnum'] = front_gear_num
 
             front_gear = message.get('front_gear', None)
             if isinstance(front_gear, int) and 0 < front_gear < 255:
-                data['front_gear'] = front_gear
+                data['fgear'] = front_gear
 
         if message['event'] == 'rear_gear_change' and message['event_type'] == 'marker':
             rear_gear_num = message.get('rear_gear_num', None)
             if isinstance(rear_gear_num, int) and 0 < rear_gear_num < 255:
-                data['rear_gear_num'] = rear_gear_num
+                data['rgearnum'] = rear_gear_num
 
             rear_gear = message.get('rear_gear', None)
             if isinstance(rear_gear, int) and 0 < rear_gear < 255:
-                data['rear_gear'] = rear_gear
+                data['rgear'] = rear_gear
 
         if len(data) > 0:
             timestamp = message['timestamp']
@@ -386,11 +386,11 @@ class FitReader(Reader):
         if message['climb_pro_event'] == 'start':
             climb = message['climb_number']
 
-            track.upsert_point(timestamp, {'active_climb': climb})
-            cache['active_climb'] = climb
+            track.upsert_point(timestamp, {'climb': climb})
+            cache['climb'] = climb
             metacache['climb_start'] = timestamp
         elif message['climb_pro_event'] == 'complete':
-            if 'active_climb' not in cache:
+            if 'climb' not in cache:
                 logger.info("ClimbPro 'complete' event without ClimbPro 'start' event. Setting climb active from start.")
                 climb = message['climb_number']
 
@@ -402,18 +402,18 @@ class FitReader(Reader):
 
                     # set active_climb for all points from start to current timestamp
                     if t < timestamp:
-                        r['active_climb'] = climb
+                        r['climb'] = climb
                     else:
                         break
 
                 if start_timestamp is not None:
                     metacache['climb_start'] = start_timestamp
 
-            if isinstance(metacache.get('climb_start', None), datetime.datetime) and isinstance(cache.get('active_climb', None), int):
+            if isinstance(metacache.get('climb_start', None), datetime.datetime) and isinstance(cache.get('climb', None), int):
                 segment_start = metacache['climb_start']
                 segment_end = timestamp
                 track.add_segment({
-                    'name': f"Climb {cache['active_climb']}",
+                    'name': f"Climb {cache['climb']}",
                     'source': 'climbpro',
                     'type': SegmentType.CLIMB,
                     'start_time': segment_start,
@@ -421,10 +421,10 @@ class FitReader(Reader):
                 })
 
             point = track.get_point(timestamp)
-            if point is not None and 'active_climb' in point:
-                del point['active_climb']
-            if 'active_climb' in cache:
-                del cache['active_climb']
+            if point is not None and 'climb' in point:
+                del point['climb']
+            if 'climb' in cache:
+                del cache['climb']
             if 'climb_start' in metacache:
                 del metacache['climb_start']
 
@@ -437,15 +437,15 @@ class FitReader(Reader):
         data: dict[str, Value] = {}
 
         if 'distance' in message and isinstance(message['distance'], (int, float)) and not math.isnan(message['distance']):
-            data['jump_distance'] = message['distance']
+            data['jumpdist'] = message['distance']
         if 'height' in message and isinstance(message['height'], (int, float)) and not math.isnan(message['height']):
-            data['jump_height'] = message['height']
+            data['jumpheight'] = message['height']
         if 'rotations' in message and isinstance(message['rotations'], (int, float)) and not math.isnan(message['rotations']):
-            data['jump_rotations'] = message['rotations']
+            data['jumprotations'] = message['rotations']
         if 'hang_time' in message and isinstance(message['hang_time'], (int, float)) and not math.isnan(message['hang_time']):
-            data['jump_hang_time'] = message['hang_time']
+            data['jumptime'] = message['hang_time']
         if 'score' in message and isinstance(message['score'], (int, float)) and not math.isnan(message['score']):
-            data['jump_score'] = message['score']
+            data['jumpscore'] = message['score']
 
         if len(data) > 0:
             track.upsert_point(message['timestamp'], data)

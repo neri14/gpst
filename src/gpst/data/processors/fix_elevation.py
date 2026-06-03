@@ -86,16 +86,16 @@ class ElevationReference:
 def _generate_report_csv(report: list[dict], path: Path) -> None:
     logger.info(f"Generating elevation fix report CSV at '{path}'...")
     with path.open('w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['timestamp', 'latitude', 'longitude', 'distance', 'old_elevation', 'new_elevation', 'correction']
+        fieldnames = ['time', 'lat', 'lon', 'dist', 'old_elevation', 'new_elevation', 'correction']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         writer.writeheader()
         for row in report:
             writer.writerow({
-                'timestamp': row['timestamp'],
-                'latitude': row['latitude'],
-                'longitude': row['longitude'],
-                'distance': row['distance'],
+                'time': row['time'],
+                'lat': row['lat'],
+                'lon': row['lon'],
+                'dist': row['dist'],
                 'old_elevation': row['old_elevation'],
                 'new_elevation': row['new_elevation'],
                 'correction': row['correction']
@@ -109,7 +109,7 @@ def _generate_report_png(report: list[dict], path: Path) -> None:
         for c in mpl.color_sequences['tab10']:
             yield c
 
-    x = [row['distance']/1000 for row in report]
+    x = [row['dist']/1000 for row in report]
     y1 = [row['old_elevation'] for row in report]
     y2 = [row['new_elevation'] for row in report]
     yright = [row['correction'] for row in report]
@@ -158,30 +158,30 @@ def fix_elevation(track: Track, dem_files: list[Path], dem_crs: str|None, report
 
     logger.info("Correcting elevation points.")
     for dt,point in track.points_iter:
-        lat = point.get('latitude')
-        lon = point.get('longitude')
+        lat = point.get('lat')
+        lon = point.get('lon')
 
         if not isinstance(lat, float) or not isinstance(lon, float):
             logger.warning(f"Point at {to_string(dt)} missing location data; skipping elevation fix.")
             continue
 
-        old_elevation = point.get('elevation')
+        old_elevation = point.get('ele')
         new_elevation = reference.get_elevation(lat, lon)
 
         if new_elevation is not None:
             logger.trace(f"Fixing elevation at {to_string(dt)} from {to_string(old_elevation)} to {to_string(new_elevation)}.")
-            point['elevation'] = new_elevation
+            point['ele'] = new_elevation
             cnt_fixed += 1
         else:
             cnt_not_fixed += 1
 
         #cleanup elevation dependant data
-        if 'smooth_elevation' in point:
-            del point['smooth_elevation']
+        if 'smoothele' in point:
+            del point['smoothele']
         if 'grade' in point:
             del point['grade']
-        if 'vertical_speed' in point:
-            del point['vertical_speed']
+        if 'vspeed' in point:
+            del point['vspeed']
 
 
         correction = None
@@ -193,10 +193,10 @@ def fix_elevation(track: Track, dem_files: list[Path], dem_crs: str|None, report
                 correction_max = correction
 
         report.append({
-            'timestamp': dt,
-            'latitude': lat,
-            'longitude': lon,
-            'distance': point.get('distance'),
+            'time': dt,
+            'lat': lat,
+            'lon': lon,
+            'dist': point.get('dist'),
             'old_elevation': old_elevation,
             'new_elevation': new_elevation,
             'correction': correction

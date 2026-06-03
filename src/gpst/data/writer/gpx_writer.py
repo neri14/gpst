@@ -169,8 +169,8 @@ class GpxWriter(Writer):
         if 'min_respiration_rate' in track.metadata:
             ET.SubElement(trk_adx, f"{tag.adx}minrr").text = str(track.metadata['min_respiration_rate'])
         
-        if 'jump_count' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}jumps").text = str(track.metadata['jump_count'])
+        if 'jumps' in track.metadata:
+            ET.SubElement(trk_adx, f"{tag.adx}jumps").text = str(track.metadata['jumps'])
 
         if 'avg_heart_rate' in track.metadata:
             val = track.metadata['avg_heart_rate']
@@ -344,16 +344,16 @@ class GpxWriter(Writer):
 
 
     def _create_trkpt_element(self, trkseg: ET.Element, timestamp: datetime, data: dict) -> ET.Element | None:
-        if 'latitude' not in data or 'longitude' not in data:
+        if 'lat' not in data or 'lon' not in data:
             logger.warning("Skipping record without position when generating gpx file")
             return None
 
         trkpt = ET.SubElement(trkseg, f"{tag.gpx}trkpt",
-                              lat=str(data['latitude']),
-                              lon=str(data['longitude']))
+                              lat=str(data['lat']),
+                              lon=str(data['lon']))
         
-        if 'elevation' in data:
-            ET.SubElement(trkpt, f"{tag.gpx}ele").text = str(data['elevation'])
+        if 'ele' in data:
+            ET.SubElement(trkpt, f"{tag.gpx}ele").text = str(data['ele'])
 
         ET.SubElement(trkpt, f"{tag.gpx}time").text = to_string(timestamp)
 
@@ -361,15 +361,15 @@ class GpxWriter(Writer):
 
         trkpt_tpx = ET.SubElement(trkpt_ext, f"{tag.tpx}TrackPointExtension")
 
-        if 'temperature' in data:
-            ET.SubElement(trkpt_tpx, f"{tag.tpx}atemp").text = str(data['temperature'])
-        if 'heart_rate' in data:
-            val = data['heart_rate']
+        if 'atemp' in data:
+            ET.SubElement(trkpt_tpx, f"{tag.tpx}atemp").text = str(data['atemp'])
+        if 'hr' in data:
+            val = data['hr']
             if isinstance(val, float):
                 val = round(val)
             ET.SubElement(trkpt_tpx, f"{tag.tpx}hr").text = str(val)
-        if 'cadence' in data:
-            ET.SubElement(trkpt_tpx, f"{tag.tpx}cad").text = str(data['cadence'])
+        if 'cad' in data:
+            ET.SubElement(trkpt_tpx, f"{tag.tpx}cad").text = str(data['cad'])
         if 'speed' in data:
             ET.SubElement(trkpt_tpx, f"{tag.tpx}speed").text = str(data['speed'])
 
@@ -377,17 +377,17 @@ class GpxWriter(Writer):
 
         if 'timer' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}timer").text = str(data['timer'])
-        if 'smooth_elevation' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}smoothele").text = str(data['smooth_elevation'])
-        if 'distance' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}dist").text = str(data['distance'])
-        if 'calories' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}kcal").text = str(data['calories'])
+        if 'smoothele' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}smoothele").text = str(data['smoothele'])
+        if 'dist' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}dist").text = str(data['dist'])
+        if 'kcal' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}kcal").text = str(data['kcal'])
 
-        if 'respiration_rate' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}rr").text = str(data['respiration_rate'])
-        if 'core_temperature' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}ctemp").text = str(data['core_temperature'])
+        if 'rr' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}rr").text = str(data['rr'])
+        if 'ctemp' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}ctemp").text = str(data['ctemp'])
 
         if 'power' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}power").text = str(data['power'])
@@ -397,54 +397,54 @@ class GpxWriter(Writer):
             ET.SubElement(trkpt_adx, f"{tag.adx}power10s").text = str(data['power10s'])
         if 'power30s' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}power30s").text = str(data['power30s'])
-        if 'accumulated_power' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}accpower").text = str(data['accumulated_power'])
+        if 'accpower' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}accpower").text = str(data['accpower'])
 
         if 'grade' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}grade").text = str(data['grade'])
-        if 'cumulative_ascent' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}asc").text = str(data['cumulative_ascent'])
-        if 'cumulative_descent' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}desc").text = str(data['cumulative_descent'])
-        if 'vertical_speed' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}vspeed").text = str(data['vertical_speed'])
+        if 'asc' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}asc").text = str(data['asc'])
+        if 'desc' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}desc").text = str(data['desc'])
+        if 'vspeed' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}vspeed").text = str(data['vspeed'])
 
-        if 'left_torque_effectiveness' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}ltrqeff").text = str(data['left_torque_effectiveness'])
-        if 'right_torque_effectiveness' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}rtrqeff").text = str(data['right_torque_effectiveness'])
-        if 'left_pedal_smoothness' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}lpdlsmooth").text = str(data['left_pedal_smoothness'])
-        if 'right_pedal_smoothness' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}rpdlsmooth").text = str(data['right_pedal_smoothness'])
-        if 'combined_pedal_smoothness' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}cpdlsmooth").text = str(data['combined_pedal_smoothness'])
+        if 'ltrqeff' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}ltrqeff").text = str(data['ltrqeff'])
+        if 'rtrqeff' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}rtrqeff").text = str(data['rtrqeff'])
+        if 'lpdlsmooth' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}lpdlsmooth").text = str(data['lpdlsmooth'])
+        if 'rpdlsmooth' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}rpdlsmooth").text = str(data['rpdlsmooth'])
+        if 'cpdlsmooth' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}cpdlsmooth").text = str(data['cpdlsmooth'])
 
         if 'grit' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}grit").text = str(data['grit'])
         if 'flow' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}flow").text = str(data['flow'])
 
-        if 'active_climb' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}climb").text = str(data['active_climb'])
+        if 'climb' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}climb").text = str(data['climb'])
 
-        if 'front_gear_num' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}fgearnum").text = str(data['front_gear_num'])
-        if 'front_gear' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}fgear").text = str(data['front_gear'])
-        if 'rear_gear_num' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}rgearnum").text = str(data['rear_gear_num'])
-        if 'rear_gear' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}rgear").text = str(data['rear_gear'])
+        if 'fgearnum' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}fgearnum").text = str(data['fgearnum'])
+        if 'fgear' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}fgear").text = str(data['fgear'])
+        if 'rgearnum' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}rgearnum").text = str(data['rgearnum'])
+        if 'rgear' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}rgear").text = str(data['rgear'])
 
-        if 'jump_distance' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}jumpdist").text = str(data['jump_distance'])
-        if 'jump_height' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}jumpheight").text = str(data['jump_height'])
-        if 'jump_hang_time' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}jumptime").text = str(data['jump_hang_time'])
-        if 'jump_score' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}jumpscore").text = str(data['jump_score'])
+        if 'jumpdist' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}jumpdist").text = str(data['jumpdist'])
+        if 'jumpheight' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}jumpheight").text = str(data['jumpheight'])
+        if 'jumptime' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}jumptime").text = str(data['jumptime'])
+        if 'jumpscore' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}jumpscore").text = str(data['jumpscore'])
 
         return trkpt
 
