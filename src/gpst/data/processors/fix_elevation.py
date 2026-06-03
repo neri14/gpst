@@ -180,8 +180,8 @@ def fix_elevation(track: Track, dem_files: list[Path], dem_crs: str|None, report
             del point['smoothele']
         if 'grade' in point:
             del point['grade']
-        if 'vertical_speed' in point:
-            del point['vertical_speed']
+        if 'vspeed' in point:
+            del point['vspeed']
 
 
         correction = None

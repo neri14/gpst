@@ -1,10 +1,6 @@
 # To Update
 
 ## point_fields
-temperature+
-accumulated_power+
-vertical_speed+
-calories+
 left_torque_effectiveness+
 right_torque_effectiveness+
 left_pedal_smoothness+

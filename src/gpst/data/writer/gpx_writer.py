@@ -381,8 +381,8 @@ class GpxWriter(Writer):
             ET.SubElement(trkpt_adx, f"{tag.adx}smoothele").text = str(data['smoothele'])
         if 'dist' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}dist").text = str(data['dist'])
-        if 'calories' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}kcal").text = str(data['calories'])
+        if 'kcal' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}kcal").text = str(data['kcal'])
 
         if 'respiration_rate' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}rr").text = str(data['respiration_rate'])
@@ -397,8 +397,8 @@ class GpxWriter(Writer):
             ET.SubElement(trkpt_adx, f"{tag.adx}power10s").text = str(data['power10s'])
         if 'power30s' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}power30s").text = str(data['power30s'])
-        if 'accumulated_power' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}accpower").text = str(data['accumulated_power'])
+        if 'accpower' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}accpower").text = str(data['accpower'])
 
         if 'grade' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}grade").text = str(data['grade'])
@@ -406,8 +406,8 @@ class GpxWriter(Writer):
             ET.SubElement(trkpt_adx, f"{tag.adx}asc").text = str(data['asc'])
         if 'desc' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}desc").text = str(data['desc'])
-        if 'vertical_speed' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}vspeed").text = str(data['vertical_speed'])
+        if 'vspeed' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}vspeed").text = str(data['vspeed'])
 
         if 'left_torque_effectiveness' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}ltrqeff").text = str(data['left_torque_effectiveness'])

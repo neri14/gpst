@@ -24,7 +24,7 @@ class SegmentType(StrEnum):
     CLIMB='climb'
 
 cadence_t           = Type('cad',          int,          'revolutions per minute',  'rpm',    0,        None)
-calories_t          = Type('calories',         float,        'kilocalories',            'kcal',   0,        None)
+calories_t          = Type('kcal',         float,        'kilocalories',            'kcal',   0,        None)
 distance_t          = Type('dist',         float,        'meters',                  'm',      0,        None)
 elevation_t         = Type('ele',              float,        'meters',                  'm',      None,     None)
 grade_t             = Type('grade',            float,        'percent',                 '%',      None,     None)
@@ -71,10 +71,10 @@ point_fields = {
     'asc':                elevation_t,
     'desc':               elevation_t,
     'atemp':                      temperature_t,
-    'accumulated_power':                power_t,
+    'accpower':                power_t,
     'gps_accuracy':                     distance_t,
-    'vertical_speed':                   vertical_speed_t,
-    'calories':                         calories_t,
+    'vspeed':                   vertical_speed_t,
+    'kcal':                         calories_t,
     'left_torque_effectiveness':        percent_t,
     'right_torque_effectiveness':       percent_t,
     'left_pedal_smoothness':            percent_t,

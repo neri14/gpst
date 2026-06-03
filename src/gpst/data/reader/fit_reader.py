@@ -268,7 +268,7 @@ class FitReader(Reader):
             record_data['ele'] = message['altitude']
 
         if 'vertical_speed' in message:
-            record_data['vertical_speed'] = message['vertical_speed']
+            record_data['vspeed'] = message['vertical_speed']
 
         if 'enhanced_speed' in message:
             record_data['speed'] = message['enhanced_speed']
@@ -293,7 +293,7 @@ class FitReader(Reader):
         if 'power' in message:
             record_data['power'] = message['power']
         if 'accumulated_power' in message:
-            record_data['accumulated_power'] = message['accumulated_power']
+            record_data['accpower'] = message['accumulated_power']
 
         if 'grade' in message:
             record_data['grade'] = message['grade']
@@ -303,7 +303,7 @@ class FitReader(Reader):
         if 'gps_accuracy' in message:
             record_data['gps_accuracy'] = message['gps_accuracy']
         if 'calories' in message:
-            record_data['calories'] = message['calories']
+            record_data['kcal'] = message['calories']
 
         if 'left_right_balance' in message:
             record_data['left_right_balance'] = message['left_right_balance']

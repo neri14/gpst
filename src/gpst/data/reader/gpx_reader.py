@@ -278,7 +278,7 @@ class AdxV11Parser( BaseParser):
                 case "dist":
                     data['dist'] = float(text)
                 case "kcal":
-                    data['calories'] = float(text) 
+                    data['kcal'] = float(text) 
                 case "rr":
                     data['respiration_rate'] = float(text)
                 case "ctemp":
@@ -292,7 +292,7 @@ class AdxV11Parser( BaseParser):
                 case "power30s":
                     data['power30s'] = float(text)
                 case "accpower":
-                    data['accumulated_power'] = float(text)
+                    data['accpower'] = float(text)
                 case "grade":
                     data['grade'] = float(text)
                 case "asc":
@@ -300,7 +300,7 @@ class AdxV11Parser( BaseParser):
                 case "desc":
                     data['desc'] = float(text)
                 case "vspeed":
-                    data['vertical_speed'] = float(text)
+                    data['vspeed'] = float(text)
                 case "ltrqeff":
                     data['left_torque_effectiveness'] = float(text)
                 case "rtrqeff":
