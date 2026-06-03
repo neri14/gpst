@@ -21,12 +21,6 @@ front_gear_num+
 front_gear+
 rear_gear_num+
 rear_gear+
-active_climb
-jump_distance
-jump_height
-jump_rotations
-jump_hang_time
-jump_score
 
 
 

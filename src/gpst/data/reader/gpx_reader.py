@@ -326,13 +326,13 @@ class AdxV11Parser( BaseParser):
                 case "rgear":
                     data['rear_gear'] = int(text)
                 case "jumpdist":
-                    data['jump_distance'] = float(text)
+                    data['jumpdist'] = float(text)
                 case "jumpheight":
-                    data['jump_height'] = float(text)
+                    data['jumpheight'] = float(text)
                 case "jumptime":
-                    data['jump_hang_time'] = float(text)
+                    data['jumptime'] = float(text)
                 case "jumpscore":
-                    data['jump_score'] = float(text)
+                    data['jumpscore'] = float(text)
                 case _:
                     logger.debug(f"Ignored ADX V11 field tag: \"{tag}\"")
 

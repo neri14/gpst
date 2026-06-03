@@ -437,15 +437,15 @@ class FitReader(Reader):
         data: dict[str, Value] = {}
 
         if 'distance' in message and isinstance(message['distance'], (int, float)) and not math.isnan(message['distance']):
-            data['jump_distance'] = message['distance']
+            data['jumpdist'] = message['distance']
         if 'height' in message and isinstance(message['height'], (int, float)) and not math.isnan(message['height']):
-            data['jump_height'] = message['height']
+            data['jumpheight'] = message['height']
         if 'rotations' in message and isinstance(message['rotations'], (int, float)) and not math.isnan(message['rotations']):
-            data['jump_rotations'] = message['rotations']
+            data['jumprotations'] = message['rotations']
         if 'hang_time' in message and isinstance(message['hang_time'], (int, float)) and not math.isnan(message['hang_time']):
-            data['jump_hang_time'] = message['hang_time']
+            data['jumptime'] = message['hang_time']
         if 'score' in message and isinstance(message['score'], (int, float)) and not math.isnan(message['score']):
-            data['jump_score'] = message['score']
+            data['jumpscore'] = message['score']
 
         if len(data) > 0:
             track.upsert_point(message['timestamp'], data)

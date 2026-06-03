@@ -437,14 +437,14 @@ class GpxWriter(Writer):
         if 'rear_gear' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}rgear").text = str(data['rear_gear'])
 
-        if 'jump_distance' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}jumpdist").text = str(data['jump_distance'])
-        if 'jump_height' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}jumpheight").text = str(data['jump_height'])
-        if 'jump_hang_time' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}jumptime").text = str(data['jump_hang_time'])
-        if 'jump_score' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}jumpscore").text = str(data['jump_score'])
+        if 'jumpdist' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}jumpdist").text = str(data['jumpdist'])
+        if 'jumpheight' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}jumpheight").text = str(data['jumpheight'])
+        if 'jumptime' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}jumptime").text = str(data['jumptime'])
+        if 'jumpscore' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}jumpscore").text = str(data['jumpscore'])
 
         return trkpt
 

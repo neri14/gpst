@@ -459,7 +459,7 @@ def _calculate_misc(track: Track) -> Track:
     jumps: int = 0
 
     for ts, point in track.points_iter:
-        if any(f in point for f in ['jump_distance', 'jump_height', 'jump_rotations', 'jump_hang_time', 'jump_score']):
+        if any(f in point for f in ['jumpdist', 'jumpheight', 'jumprotations', 'jumptime', 'jumpscore']):
             logger.trace(f"Jump detected at {to_string(ts)}")
             jumps += 1
 

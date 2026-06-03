@@ -89,11 +89,11 @@ point_fields = {
     'rear_gear_num':                    int_t,
     'rear_gear':                        teeth_t,
     'climb':                     int_t,
-    'jump_distance':                    distance_t,
-    'jump_height':                      distance_t,
-    'jump_rotations':                   int_t,
-    'jump_hang_time':                   time_t,
-    'jump_score':                       float_t,
+    'jumpdist':                    distance_t,
+    'jumpheight':                      distance_t,
+    'jumprotations':                   int_t,
+    'jumptime':                   time_t,
+    'jumpscore':                       float_t,
 }
 
 metadata_fields = {
