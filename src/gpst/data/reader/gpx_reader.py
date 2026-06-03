@@ -131,7 +131,7 @@ class TpxV2Parser(BaseParser):
                 case "atemp":
                     data['temperature'] = float(text)
                 case "hr":
-                    data['heart_rate'] = float(text)
+                    data['hr'] = float(text)
                 case "cad":
                     data['cadence'] = int(text)
                 case "speed":

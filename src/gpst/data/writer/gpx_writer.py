@@ -363,8 +363,8 @@ class GpxWriter(Writer):
 
         if 'temperature' in data:
             ET.SubElement(trkpt_tpx, f"{tag.tpx}atemp").text = str(data['temperature'])
-        if 'heart_rate' in data:
-            val = data['heart_rate']
+        if 'hr' in data:
+            val = data['hr']
             if isinstance(val, float):
                 val = round(val)
             ET.SubElement(trkpt_tpx, f"{tag.tpx}hr").text = str(val)

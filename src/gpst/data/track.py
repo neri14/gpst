@@ -57,7 +57,7 @@ point_fields = {
     'lon':                              longitude_t,
     'ele':                              elevation_t,
     'smoothele':                 elevation_t,
-    'heart_rate':                       heart_rate_t,
+    'hr':                       heart_rate_t,
     'cadence':                          cadence_t,
     'distance':                         distance_t,
     'track_distance':                   distance_t,

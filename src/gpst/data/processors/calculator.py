@@ -626,7 +626,7 @@ def _calculate_segments(track: Track) -> Track:
             if ts-start_ts >= timedelta(seconds=30) and isinstance(power30s, (int, float)):
                 power30s_lst.append(power30s)
 
-            heart_rate = point.get('heart_rate')
+            heart_rate = point.get('hr')
             if isinstance(heart_rate, (int, float)):
                 heart_rates.append(heart_rate)
 
