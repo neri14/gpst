@@ -316,7 +316,7 @@ class AdxV11Parser( BaseParser):
                 case "flow":
                     data['flow'] = float(text)
                 case "climb":
-                    data['active_climb'] = int(text)
+                    data['climb'] = int(text)
                 case "fgearnum":
                     data['front_gear_num'] = int(text)
                 case "fgear":

@@ -51,10 +51,10 @@ class FitReader(Reader):
             logger.error(f"Failed to read fit file: {e}")
             return None
 
-        if isinstance(metacache.get('climb_start'), datetime.datetime) and isinstance(cache.get('active_climb'), int):
+        if isinstance(metacache.get('climb_start'), datetime.datetime) and isinstance(cache.get('climb'), int):
             logger.info("Fit file ended while a ClimbPro climb was still active. Finalizing climb segment.")
             track.add_segment({
-                'name': f"Climb {cache['active_climb']}",
+                'name': f"Climb {cache['climb']}",
                 'source': 'climbpro',
                 'type': SegmentType.CLIMB,
                 'start_time': metacache['climb_start'],
@@ -386,11 +386,11 @@ class FitReader(Reader):
         if message['climb_pro_event'] == 'start':
             climb = message['climb_number']
 
-            track.upsert_point(timestamp, {'active_climb': climb})
-            cache['active_climb'] = climb
+            track.upsert_point(timestamp, {'climb': climb})
+            cache['climb'] = climb
             metacache['climb_start'] = timestamp
         elif message['climb_pro_event'] == 'complete':
-            if 'active_climb' not in cache:
+            if 'climb' not in cache:
                 logger.info("ClimbPro 'complete' event without ClimbPro 'start' event. Setting climb active from start.")
                 climb = message['climb_number']
 
@@ -402,18 +402,18 @@ class FitReader(Reader):
 
                     # set active_climb for all points from start to current timestamp
                     if t < timestamp:
-                        r['active_climb'] = climb
+                        r['climb'] = climb
                     else:
                         break
 
                 if start_timestamp is not None:
                     metacache['climb_start'] = start_timestamp
 
-            if isinstance(metacache.get('climb_start', None), datetime.datetime) and isinstance(cache.get('active_climb', None), int):
+            if isinstance(metacache.get('climb_start', None), datetime.datetime) and isinstance(cache.get('climb', None), int):
                 segment_start = metacache['climb_start']
                 segment_end = timestamp
                 track.add_segment({
-                    'name': f"Climb {cache['active_climb']}",
+                    'name': f"Climb {cache['climb']}",
                     'source': 'climbpro',
                     'type': SegmentType.CLIMB,
                     'start_time': segment_start,
@@ -421,10 +421,10 @@ class FitReader(Reader):
                 })
 
             point = track.get_point(timestamp)
-            if point is not None and 'active_climb' in point:
-                del point['active_climb']
-            if 'active_climb' in cache:
-                del cache['active_climb']
+            if point is not None and 'climb' in point:
+                del point['climb']
+            if 'climb' in cache:
+                del cache['climb']
             if 'climb_start' in metacache:
                 del metacache['climb_start']
 

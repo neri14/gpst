@@ -88,7 +88,7 @@ point_fields = {
     'front_gear':                       teeth_t,
     'rear_gear_num':                    int_t,
     'rear_gear':                        teeth_t,
-    'active_climb':                     int_t,
+    'climb':                     int_t,
     'jump_distance':                    distance_t,
     'jump_height':                      distance_t,
     'jump_rotations':                   int_t,

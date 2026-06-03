@@ -425,8 +425,8 @@ class GpxWriter(Writer):
         if 'flow' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}flow").text = str(data['flow'])
 
-        if 'active_climb' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}climb").text = str(data['active_climb'])
+        if 'climb' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}climb").text = str(data['climb'])
 
         if 'front_gear_num' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}fgearnum").text = str(data['front_gear_num'])
