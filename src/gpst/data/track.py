@@ -80,7 +80,7 @@ point_fields = {
     'lpdlsmooth':            percent_t,
     'rpdlsmooth':           percent_t,
     'cpdlsmooth':        percent_t,
-    'respiration_rate':                 respiration_rate_t,
+    'rr':                 respiration_rate_t,
     'grit':                             float_t,
     'flow':                             float_t,
     'core_temperature':                 temperature_t,

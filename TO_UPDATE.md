@@ -1,11 +1,6 @@
 # To Update
 
 ## point_fields
-left_torque_effectiveness+
-right_torque_effectiveness+
-left_pedal_smoothness+
-right_pedal_smoothness+
-combined_pedal_smoothness+
 respiration_rate+
 grit+
 flow+

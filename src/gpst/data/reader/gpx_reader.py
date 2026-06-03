@@ -280,7 +280,7 @@ class AdxV11Parser( BaseParser):
                 case "kcal":
                     data['kcal'] = float(text) 
                 case "rr":
-                    data['respiration_rate'] = float(text)
+                    data['rr'] = float(text)
                 case "ctemp":
                     data['core_temperature'] = float(text)
                 case "power":

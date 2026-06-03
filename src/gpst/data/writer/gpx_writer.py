@@ -384,8 +384,8 @@ class GpxWriter(Writer):
         if 'kcal' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}kcal").text = str(data['kcal'])
 
-        if 'respiration_rate' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}rr").text = str(data['respiration_rate'])
+        if 'rr' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}rr").text = str(data['rr'])
         if 'core_temperature' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}ctemp").text = str(data['core_temperature'])
 

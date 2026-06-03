@@ -283,9 +283,9 @@ class FitReader(Reader):
             record_data['cad'] = message['cadence']
 
         if 'enhanced_respiration_rate' in message:
-            record_data['respiration_rate'] = message['enhanced_respiration_rate']
+            record_data['rr'] = message['enhanced_respiration_rate']
         elif 'respiration_rate' in message:
-            record_data['respiration_rate'] = message['respiration_rate']
+            record_data['rr'] = message['respiration_rate']
 
         if 'core_temperature' in message:
             record_data['core_temperature'] = message['core_temperature']
