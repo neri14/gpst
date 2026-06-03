@@ -432,8 +432,8 @@ def _calculate_ascent_descent(track: Track) -> Track:
             elif delta_elev < 0:
                 total_descent += abs(delta_elev)
 
-        point['cumulative_ascent'] = total_ascent
-        point['cumulative_descent'] = total_descent
+        point['asc'] = total_ascent
+        point['desc'] = total_descent
 
         last_ts = ts
         last_elevation = elevation
@@ -555,13 +555,13 @@ def _calculate_segments(track: Track) -> Track:
                     start_elevation = elevation
                 end_elevation = elevation
 
-            ascent = point.get('cumulative_ascent')
+            ascent = point.get('asc')
             if isinstance(ascent, (int, float)):
                 if start_ascent is None:
                     start_ascent = ascent
                 end_ascent = ascent
             
-            descent = point.get('cumulative_descent')
+            descent = point.get('desc')
             if isinstance(descent, (int, float)):
                 if start_descent is None:
                     start_descent = descent

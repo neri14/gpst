@@ -50,20 +50,20 @@ class Gpx11Parser(BaseParser):
         match tag:
             case "name":
                 if text is not None:
-                    data["name"] = text
+                    data['name'] = text
 
             case "src":
                 if text is not None:
-                    data["device"] = text
+                    data['device'] = text
 
             case "type":
                 if text is not None:
-                    data["sport"] = text
+                    data['sport'] = text
 
             case "time":
                 ts = timestamp_from_str(text)
                 if ts is not None:
-                    data["start_time"] = ts
+                    data['start_time'] = ts
                 else:
                     logger.warning(f"Invalid time format: '{text}'")
 
@@ -94,15 +94,15 @@ class Gpx11Parser(BaseParser):
 
             match tag:
                 case "ele":
-                    data["ele"] = float(text)
+                    data['ele'] = float(text)
                 case "time":
                     ts = timestamp_from_str(text)
                     if ts is not None:
-                        data["time"] = ts
+                        data['time'] = ts
                     else:
                         logger.warning(f"Invalid time format: '{text}'")
                 case "power":# for handling Strava "power" field without proper namespace
-                    data["power"] = float(text)
+                    data['power'] = float(text)
                 case _:
                     logger.debug(f"Ignored GPX 1.1 field tag: \"{tag}\"")
 
@@ -129,13 +129,13 @@ class TpxV2Parser(BaseParser):
 
             match tag:
                 case "atemp":
-                    data["temperature"] = float(text)
+                    data['temperature'] = float(text)
                 case "hr":
-                    data["heart_rate"] = float(text)
+                    data['heart_rate'] = float(text)
                 case "cad":
-                    data["cadence"] = int(text)
+                    data['cadence'] = int(text)
                 case "speed":
-                    data["speed"] = float(text)
+                    data['speed'] = float(text)
                 case _:
                     logger.debug(f"Ignored TPX V2 field tag: \"{tag}\"")
 
@@ -162,7 +162,7 @@ class GpxxV3Parser(BaseParser):
 
             match tag:
                 case "Temperature":
-                    data["temperature"] = float(text)
+                    data['temperature'] = float(text)
                 case _:
                     logger.debug(f"Ignored GPXX V3 field tag: \"{tag}\"")
 
@@ -188,69 +188,69 @@ class AdxV11Parser( BaseParser):
 
             match tag:
                 case "elapsedtime":
-                    data["total_elapsed_time"] = float(text)
+                    data['total_elapsed_time'] = float(text)
                 case "timertime":
-                    data["total_timer_time"] = float(text)
+                    data['total_timer_time'] = float(text)
                 case "distance":
-                    data["total_distance"] = float(text)
+                    data['total_distance'] = float(text)
                 case "ascent":
-                    data["total_ascent"] = float(text)
+                    data['total_ascent'] = float(text)
                 case "descent":
-                    data["total_descent"] = float(text)
+                    data['total_descent'] = float(text)
                 case "maxgrade":
-                    data["max_grade"] = float(text)
+                    data['max_grade'] = float(text)
                 case "mingrade":
-                    data["min_grade"] = float(text)
+                    data['min_grade'] = float(text)
                 case "maxele":
-                    data["max_elevation"] = float(text)
+                    data['max_elevation'] = float(text)
                 case "minele":
-                    data["min_elevation"] = float(text)
+                    data['min_elevation'] = float(text)
                 case "cycles":
-                    data["total_cycles"] = int(text)
+                    data['total_cycles'] = int(text)
                 case "strokes":
-                    data["total_strokes"] = int(text)
+                    data['total_strokes'] = int(text)
                 case "work":
-                    data["total_work"] = int(text)
+                    data['total_work'] = int(text)
                 case "kcal":
-                    data["total_calories"] = float(text)
+                    data['total_calories'] = float(text)
                 case "grit":
-                    data["total_grit"] = float(text)
+                    data['total_grit'] = float(text)
                 case "flow":
-                    data["avg_flow"] = float(text)
+                    data['avg_flow'] = float(text)
                 case "avgspeed":
-                    data["avg_speed"] = float(text)
+                    data['avg_speed'] = float(text)
                 case "maxspeed":
-                    data["max_speed"] = float(text)
+                    data['max_speed'] = float(text)
                 case "avgpower":
-                    data["avg_power"] = float(text)
+                    data['avg_power'] = float(text)
                 case "maxpower":
-                    data["max_power"] = float(text)
+                    data['max_power'] = float(text)
                 case "normpower":
-                    data["normalized_power"] = float(text)
+                    data['normalized_power'] = float(text)
                 case "avgvam":
-                    data["avg_vam"] = float(text)
+                    data['avg_vam'] = float(text)
                 case "avgrr":
-                    data["avg_respiration_rate"] = float(text)
+                    data['avg_respiration_rate'] = float(text)
                 case "maxrr":
-                    data["max_respiration_rate"] = float(text)
+                    data['max_respiration_rate'] = float(text)
                 case "minrr":
-                    data["min_respiration_rate"] = float(text)
+                    data['min_respiration_rate'] = float(text)
                 case "jumps":
-                    data["jumps"] = int(text)
+                    data['jumps'] = int(text)
                 case "avghr":
-                    data["avg_heart_rate"] = float(text)
+                    data['avg_heart_rate'] = float(text)
                 case "maxhr":
-                    data["max_heart_rate"] = float(text)
+                    data['max_heart_rate'] = float(text)
                 case "avgcad":
-                    data["avg_cadence"] = int(text)
+                    data['avg_cadence'] = int(text)
                 case "maxcad":
-                    data["max_cadence"] = int(text)
+                    data['max_cadence'] = int(text)
                 case "avgatemp":
-                    data["avg_temperature"] = float(text)
+                    data['avg_temperature'] = float(text)
                 case "maxatemp":
-                    data["max_temperature"] = float(text)
+                    data['max_temperature'] = float(text)
                 case "minatemp":
-                    data["min_temperature"] = float(text)
+                    data['min_temperature'] = float(text)
                 case _:
                     logger.debug(f"Ignored ADX V11 metadata tag: \"{tag}\"")
 
@@ -272,67 +272,67 @@ class AdxV11Parser( BaseParser):
 
             match tag:
                 case "timer":
-                    data["timer"] = float(text)
-                case  "smoothele":
-                    data["smoothele"] = float(text)
+                    data['timer'] = float(text)
+                case "smoothele":
+                    data['smoothele'] = float(text)
                 case "dist":
-                    data["distance"] = float(text)
+                    data['distance'] = float(text)
                 case "kcal":
-                    data["calories"] = float(text) 
+                    data['calories'] = float(text) 
                 case "rr":
-                    data["respiration_rate"] = float(text)
+                    data['respiration_rate'] = float(text)
                 case "ctemp":
-                    data["core_temperature"] = float(text)
+                    data['core_temperature'] = float(text)
                 case "power":
-                    data["power"] = float(text)
+                    data['power'] = float(text)
                 case "power3s":
-                    data["power3s"] = float(text)
+                    data['power3s'] = float(text)
                 case "power10s":
-                    data["power10s"] = float(text)
+                    data['power10s'] = float(text)
                 case "power30s":
-                    data["power30s"] = float(text)
+                    data['power30s'] = float(text)
                 case "accpower":
-                    data["accumulated_power"] = float(text)
+                    data['accumulated_power'] = float(text)
                 case "grade":
-                    data["grade"] = float(text)
+                    data['grade'] = float(text)
                 case "asc":
-                    data["cumulative_ascent"] = float(text)
+                    data['asc'] = float(text)
                 case "desc":
-                    data["cumulative_descent"] = float(text)
+                    data['desc'] = float(text)
                 case "vspeed":
-                    data["vertical_speed"] = float(text)
+                    data['vertical_speed'] = float(text)
                 case "ltrqeff":
-                    data["left_torque_effectiveness"] = float(text)
+                    data['left_torque_effectiveness'] = float(text)
                 case "rtrqeff":
-                    data["right_torque_effectiveness"] = float(text)
+                    data['right_torque_effectiveness'] = float(text)
                 case "lpdlsmooth":
-                    data["left_pedal_smoothness"] = float(text)
+                    data['left_pedal_smoothness'] = float(text)
                 case "rpdlsmooth":
-                    data["right_pedal_smoothness"] = float(text)
+                    data['right_pedal_smoothness'] = float(text)
                 case "cpdlsmooth":
-                    data["combined_pedal_smoothness"] = float(text)
+                    data['combined_pedal_smoothness'] = float(text)
                 case "grit":
-                    data["grit"] = float(text)
+                    data['grit'] = float(text)
                 case "flow":
-                    data["flow"] = float(text)
+                    data['flow'] = float(text)
                 case "climb":
-                    data["active_climb"] = int(text)
+                    data['active_climb'] = int(text)
                 case "fgearnum":
-                    data["front_gear_num"] = int(text)
+                    data['front_gear_num'] = int(text)
                 case "fgear":
-                    data["front_gear"] = int(text)
+                    data['front_gear'] = int(text)
                 case "rgearnum":
-                    data["rear_gear_num"] = int(text)
+                    data['rear_gear_num'] = int(text)
                 case "rgear":
-                    data["rear_gear"] = int(text)
+                    data['rear_gear'] = int(text)
                 case "jumpdist":
-                    data["jump_distance"] = float(text)
+                    data['jump_distance'] = float(text)
                 case "jumpheight":
-                    data["jump_height"] = float(text)
+                    data['jump_height'] = float(text)
                 case "jumptime":
-                    data["jump_hang_time"] = float(text)
+                    data['jump_hang_time'] = float(text)
                 case "jumpscore":
-                    data["jump_score"] = float(text)
+                    data['jump_score'] = float(text)
                 case _:
                     logger.debug(f"Ignored ADX V11 field tag: \"{tag}\"")
 
@@ -374,107 +374,107 @@ class AsxV11Parser(BaseParser):
 
                     match tag:
                         case "name":
-                            data["name"] = text
+                            data['name'] = text
                         case "source":
-                            data["source"] = text
+                            data['source'] = text
                         case "type":
-                            data["type"] = SegmentType(text)
+                            data['type'] = SegmentType(text)
                         case "starttime":
                             ts = timestamp_from_str(text)
                             if ts is not None:
-                                data["start_time"] = ts
+                                data['start_time'] = ts
                         case "endtime":
                             ts = timestamp_from_str(text)
                             if ts is not None:
-                                data["end_time"] = ts
+                                data['end_time'] = ts
                         case "starttimer":
-                            data["start_timer"] = float(text)
+                            data['start_timer'] = float(text)
                         case "endtimer":
-                            data["end_timer"] = float(text)
+                            data['end_timer'] = float(text)
                         case "startdist":
-                            data["start_distance"] = float(text)
+                            data['start_distance'] = float(text)
                         case "enddist":
-                            data["end_distance"] = float(text)
+                            data['end_distance'] = float(text)
                         case "startele":
-                            data["start_elevation"] = float(text)
+                            data['start_elevation'] = float(text)
                         case "endele":
-                            data["end_elevation"] = float(text)
+                            data['end_elevation'] = float(text)
                         case "startasc":
-                            data["start_ascent"] = float(text)
+                            data['start_ascent'] = float(text)
                         case "endasc":
-                            data["end_ascent"] = float(text)
+                            data['end_ascent'] = float(text)
                         case "startdesc":
-                            data["start_descent"] = float(text)
+                            data['start_descent'] = float(text)
                         case "enddesc":
-                            data["end_descent"] = float(text)
+                            data['end_descent'] = float(text)
                         case "startlat":
-                            data["start_latitude"] = float(text)
+                            data['start_latitude'] = float(text)
                         case "startlon":
-                            data["start_longitude"] = float(text)
+                            data['start_longitude'] = float(text)
                         case "endlat":
-                            data["end_latitude"] = float(text)
+                            data['end_latitude'] = float(text)
                         case "endlon":
-                            data["end_longitude"] = float(text)
+                            data['end_longitude'] = float(text)
                         case "minlat":
-                            data["minlat"] = float(text)
+                            data['minlat'] = float(text)
                         case "minlon":
-                            data["minlon"] = float(text)
+                            data['minlon'] = float(text)
                         case "maxlat":
-                            data["maxlat"] = float(text)
+                            data['maxlat'] = float(text)
                         case "maxlon":
-                            data["maxlon"] = float(text)
+                            data['maxlon'] = float(text)
                         case "elapsedtime":
-                            data["total_elapsed_time"] = float(text)
+                            data['total_elapsed_time'] = float(text)
                         case "timertime":
-                            data["total_timer_time"] = float(text)
+                            data['total_timer_time'] = float(text)
                         case "distance":
-                            data["total_distance"] = float(text)
+                            data['total_distance'] = float(text)
                         case "ascent":
-                            data["total_ascent"] = float(text)
+                            data['total_ascent'] = float(text)
                         case "descent":
-                            data["total_descent"] = float(text)
+                            data['total_descent'] = float(text)
                         case "avggrade":
-                            data["avg_grade"] = float(text)
+                            data['avg_grade'] = float(text)
                         case "maxgrade":
-                            data["max_grade"] = float(text)
+                            data['max_grade'] = float(text)
                         case "mingrade":
-                            data["min_grade"] = float(text)
+                            data['min_grade'] = float(text)
                         case "maxele":
-                            data["max_elevation"] = float(text)
+                            data['max_elevation'] = float(text)
                         case "minele":
-                            data["min_elevation"] = float(text)
+                            data['min_elevation'] = float(text)
                         case "avgspeed":
-                            data["avg_speed"] = float(text)
+                            data['avg_speed'] = float(text)
                         case "maxspeed":
-                            data["max_speed"] = float(text)
+                            data['max_speed'] = float(text)
                         case "avgvam":
-                            data["avg_vam"] = float(text)
+                            data['avg_vam'] = float(text)
                         case "avgpower":
-                            data["avg_power"] = float(text)
+                            data['avg_power'] = float(text)
                         case "maxpower":
-                            data["max_power"] = float(text)
+                            data['max_power'] = float(text)
                         case "normpower":
-                            data["normalized_power"] = float(text)
+                            data['normalized_power'] = float(text)
                         case "avghr":
-                            data["avg_heart_rate"] = float(text)
+                            data['avg_heart_rate'] = float(text)
                         case "maxhr":
-                            data["max_heart_rate"] = float(text)
+                            data['max_heart_rate'] = float(text)
                         case "avgcad":
-                            data["avg_cadence"] = round(float(text))
+                            data['avg_cadence'] = round(float(text))
                         case "maxcad":
-                            data["max_cadence"] = round(float(text))
+                            data['max_cadence'] = round(float(text))
                         case "cycles":
-                            data["total_cycles"] = int(text)
+                            data['total_cycles'] = int(text)
                         case "strokes":
-                            data["total_strokes"] = int(text)
+                            data['total_strokes'] = int(text)
                         case "work":
-                            data["total_work"] = int(text)
+                            data['total_work'] = int(text)
                         case "kcal":
-                            data["total_calories"] = float(text)
+                            data['total_calories'] = float(text)
                         case "grit":
-                            data["total_grit"] = float(text)
+                            data['total_grit'] = float(text)
                         case "flow":
-                            data["avg_flow"] = float(text)
+                            data['avg_flow'] = float(text)
                         case _:
                             logger.debug(f"Ignored ASX V11 segment field tag: \"{field.tag}\"")
                 except Exception as e:
@@ -695,11 +695,11 @@ class GpxReader(Reader):
                 d = self._parse_track_point_extensions(child)
                 data.update(d)
         
-        if "time" not in data or not isinstance(data["time"], datetime):
+        if "time" not in data or not isinstance(data['time'], datetime):
             logger.warning("Track point missing timestamp field.")
             return
         
-        track.upsert_point(data["time"], data)
+        track.upsert_point(data['time'], data)
 
 
     def _parse_track_point_extensions(self, element: ET.Element) -> dict[str, Value]:

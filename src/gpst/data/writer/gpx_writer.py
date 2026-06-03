@@ -402,10 +402,10 @@ class GpxWriter(Writer):
 
         if 'grade' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}grade").text = str(data['grade'])
-        if 'cumulative_ascent' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}asc").text = str(data['cumulative_ascent'])
-        if 'cumulative_descent' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}desc").text = str(data['cumulative_descent'])
+        if 'asc' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}asc").text = str(data['asc'])
+        if 'desc' in data:
+            ET.SubElement(trkpt_adx, f"{tag.adx}desc").text = str(data['desc'])
         if 'vertical_speed' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}vspeed").text = str(data['vertical_speed'])
 

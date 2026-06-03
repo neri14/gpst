@@ -1,43 +1,35 @@
 # To Update
 
 ## point_fields
-heart_rate
-cadence
-distance
-track_distance
-speed
-track_speed
-power
-power3s
-power10s
-power30s
-grade
-cumulative_ascent
-cumulative_descent
-temperature
-accumulated_power
-gps_accuracy
-vertical_speed
-calories
-left_torque_effectiveness
-right_torque_effectiveness
-left_pedal_smoothness
-right_pedal_smoothness
-combined_pedal_smoothness
-respiration_rate
-grit
-flow
-core_temperature
-front_gear_num
-front_gear
-rear_gear_num
-rear_gear
+heart_rate+
+cadence+
+distance+
+temperature+
+accumulated_power+
+vertical_speed+
+calories+
+left_torque_effectiveness+
+right_torque_effectiveness+
+left_pedal_smoothness+
+right_pedal_smoothness+
+combined_pedal_smoothness+
+respiration_rate+
+grit+
+flow+
+core_temperature+
+front_gear_num+
+front_gear+
+rear_gear_num+
+rear_gear+
 active_climb
 jump_distance
 jump_height
 jump_rotations
 jump_hang_time
 jump_score
+
+
+
 
 
 ## metadata_fields
