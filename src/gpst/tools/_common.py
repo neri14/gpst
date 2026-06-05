@@ -7,8 +7,8 @@ def verify_in_path(in_path: Path) -> bool:
         logger.error(f"Input file '{in_path}' does not exist.")
         return False
     
-    if in_path.suffix.lower() not in ('.fit', '.gpx'):
-        logger.error(f"Input file '{in_path}' is not a FIT or GPX file.")
+    if in_path.suffix.lower() not in ('.fit', '.gpx', '.vbo'):
+        logger.error(f"Input file '{in_path}' is not a FIT, GPX, or VBO file.")
         return False
 
     return True

@@ -307,7 +307,7 @@ class Track:
             yield ts, cur, left + [cur] + right
 
 
-    def upsert_point(self, timestamp: datetime, data: dict[str, Value]) -> None:
+    def upsert_point(self, timestamp: datetime, data: dict[str, Value], supress_unknown: bool = False) -> None:
         if not timestamp:
             raise ValueError("Timestamp must be provided for upserting a point.")
         
@@ -321,7 +321,7 @@ class Track:
             if key in point_fields and point_fields[key].pytype == float and isinstance(data[key], int):
                 data[key] = float(data[key])  # type: ignore[arg-type]
 
-            self._verify_type(key, data[key], point_fields.get(key), timestamp)
+            self._verify_type(key, data[key], point_fields.get(key), timestamp, supress_unknown=supress_unknown)
         if timestamp not in self._points:
             self._points[timestamp] = {}
         self._points[timestamp].update(data)
@@ -370,11 +370,12 @@ class Track:
         self._segments.append((timestamp, data))
 
 
-    def _verify_type(self, key: str, value: Value, type_info: Type | None, timestamp: datetime|None = None) -> None:
+    def _verify_type(self, key: str, value: Value, type_info: Type | None, timestamp: datetime|None = None, supress_unknown: bool = False) -> None:
         tstr = f" at {timestamp_str(timestamp)}" if timestamp else ""
 
         if not type_info:
-            logger.warning(f"Unknown field '{key}'{tstr}.")
+            if not supress_unknown:
+                logger.warning(f"Unknown field '{key}'{tstr}.")
             return
 
         if type_info.pytype and (not isinstance(value, type_info.pytype)):
