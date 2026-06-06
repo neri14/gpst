@@ -65,11 +65,13 @@ class VboReader(Reader):
                     continue
 
 
-                data = {}
+                data: dict[str, Value] = {}
 
-                for col, val in zip(columns, values):
+                ts: datetime|None = None
+
+                for col, val_str in zip(columns, values):
                     try:
-                        val = float(val)
+                        val = float(val_str)
                     except ValueError:
                         logger.warning(f"Skipping invalid value for column '{col}': {val}")
                         continue
@@ -86,6 +88,7 @@ class VboReader(Reader):
                             time  = datetime(yy, mm, dd, h, m, s, us, tzinfo=timezone.utc)
 
                             data['time'] = time
+                            ts = time
                         case 'lat':
                             data['lat'] = val/60.0
                         case 'long':
@@ -98,6 +101,9 @@ class VboReader(Reader):
                         case _:
                             data[col] = val
 
-                track.upsert_point(data['time'], data, custom_fields=True)
+                if ts is None:
+                    logger.warning(f"Skipping line with missing time value: {line}")
+                    continue
+                track.upsert_point(ts, data, custom_fields=True)
 
         return track
