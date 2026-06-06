@@ -186,7 +186,7 @@ def add_argparser(subparsers: argparse._SubParsersAction) -> None:
         "path",
         type=Path,
         metavar="FILE",
-        help="Path to input file (.gpx or .fit)."
+        help="Path to input file (.gpx, .fit, .vbo)."
     )
     parser.add_argument(
         "-x", "--x-axis",
