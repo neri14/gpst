@@ -489,6 +489,24 @@ class AsxV11Parser(BaseParser):
         return {}
 
 
+class CustomDataParser(BaseParser):
+    def __init__(self):
+        super().__init__(name="CustomDataParser")
+
+    def parse_field(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
+        if text is None:
+            logger.warning(f"Custom Data field tag \"{tag}\" has no text.")
+            return {}
+
+        try:
+            return {tag: float(text)}
+        except ValueError as e:
+            logger.warning(f"Invalid type(s) for Custom Data field tag: \"{tag}\", attribs: {attrib}, text: \"{text}\", error: {e}")
+        except Exception as e:
+            logger.warning(f"Error parsing Custom Data field tag \"{tag}\": {e}")
+        return {}
+
+
 class Namespace:
     _ignore_prefixes = [
         "http://www.",
@@ -568,7 +586,13 @@ _namespace = {
     "asxv11": Namespace("ActivitySegmentsExtnsions v1.1", AsxV11Parser(),
                        "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensions/v11",
                        "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensionsv11.xsd"),
+
+    "gpst": Namespace("CustomDataExtensions", CustomDataParser(),
+                      "http://www.n3r1.com/xmlschemas/CustomDataExtensions/v0",
+                      "http://www.n3r1.com/xmlschemas/CustomDataExtensionsv0.xsd"),
 }
+
+custom_fields_url = "http://www.n3r1.com/xmlschemas/CustomDataExtensions/v0"
 
 namespace = SimpleNamespace(**_namespace)
 
@@ -699,7 +723,9 @@ class GpxReader(Reader):
             logger.warning("Track point missing time field.")
             return
         
-        track.upsert_point(data['time'], data)
+
+        has_custom_fields = element.find(f".//{{{custom_fields_url}}}*") is not None
+        track.upsert_point(data['time'], data, custom_fields=has_custom_fields)
 
 
     def _parse_track_point_extensions(self, element: ET.Element) -> dict[str, Value]:

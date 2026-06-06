@@ -17,7 +17,7 @@ namespace_urls = {
     'tpx': "http://www.garmin.com/xmlschemas/TrackPointExtension/v2",
     'adx': "http://www.n3r1.com/xmlschemas/ActivityDataExtensions/v11",
     'asx': "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensions/v11",
-    'gpst': "http://www.n3r1.com/xmlschemas/CustomDataExtensions/v11"
+    'gpst': "http://www.n3r1.com/xmlschemas/CustomDataExtensions/v0"
 }
 
 namespace_schemas = {
