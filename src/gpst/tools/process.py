@@ -54,7 +54,7 @@ def add_argparser(subparsers: argparse._SubParsersAction) -> None:
         "in_path",
         type=Path,
         metavar="IN_FILE",
-        help="Path to input file (.gpx or .fit)."
+        help="Path to input file (.gpx, .fit, .vbo)."
     )
     parser.add_argument(
         "-o", "--output",

@@ -1,12 +1,13 @@
 from pathlib import Path
 
 from .track import Track
-from .reader import Reader, FitReader, GpxReader
+from .reader import Reader, FitReader, GpxReader, VboReader
 
 
 _readers = {
     '.fit': FitReader(),
-    '.gpx': GpxReader()
+    '.gpx': GpxReader(),
+    '.vbo': VboReader()
 }
 
 

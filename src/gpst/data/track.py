@@ -225,6 +225,8 @@ class Track:
         self._metadata: dict[str, Value] = {}
         self._segments: list[tuple[datetime, dict[str, Value]]] = []
 
+        self._custom_fields: set[str] = set()
+
 
     @property
     def points(self) -> dict[datetime, dict[str, Value]]:
@@ -251,6 +253,11 @@ class Track:
     def segments_iter(self) -> Iterable[tuple[datetime, dict[str, Value]]]:
         for ts, segment in sorted(self._segments, key=lambda x: x[0]):
             yield ts, segment
+
+    
+    @property
+    def custom_fields(self) -> set[str]:
+        return self._custom_fields
 
 
     def __repr__(self) -> str:
@@ -307,7 +314,7 @@ class Track:
             yield ts, cur, left + [cur] + right
 
 
-    def upsert_point(self, timestamp: datetime, data: dict[str, Value]) -> None:
+    def upsert_point(self, timestamp: datetime, data: dict[str, Value], custom_fields: bool = False) -> None:
         if not timestamp:
             raise ValueError("Timestamp must be provided for upserting a point.")
         
@@ -321,7 +328,12 @@ class Track:
             if key in point_fields and point_fields[key].pytype == float and isinstance(data[key], int):
                 data[key] = float(data[key])  # type: ignore[arg-type]
 
-            self._verify_type(key, data[key], point_fields.get(key), timestamp)
+            supress_unknown = custom_fields # supress unknown field warnings if custom_fields are provided
+            self._verify_type(key, data[key], point_fields.get(key), timestamp, supress_unknown=supress_unknown)
+
+            if custom_fields and key not in point_fields:
+                self._custom_fields.add(key)
+
         if timestamp not in self._points:
             self._points[timestamp] = {}
         self._points[timestamp].update(data)
@@ -370,11 +382,12 @@ class Track:
         self._segments.append((timestamp, data))
 
 
-    def _verify_type(self, key: str, value: Value, type_info: Type | None, timestamp: datetime|None = None) -> None:
+    def _verify_type(self, key: str, value: Value, type_info: Type | None, timestamp: datetime|None = None, supress_unknown: bool = False) -> None:
         tstr = f" at {timestamp_str(timestamp)}" if timestamp else ""
 
         if not type_info:
-            logger.warning(f"Unknown field '{key}'{tstr}.")
+            if not supress_unknown:
+                logger.warning(f"Unknown field '{key}'{tstr}.")
             return
 
         if type_info.pytype and (not isinstance(value, type_info.pytype)):

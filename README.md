@@ -27,7 +27,7 @@ GPS Tools - A collection of tools to work with GPS track files.
 positional arguments:
   tool        Available tools:
     map       Draw map of input file.
-    plot      Plot data from the fit file.
+    plot      Plot data from the input file.
     process   Process GPS track file and write results to a GPX file.
 
 options:
@@ -43,11 +43,11 @@ $ gpst process -h
 usage: gpst process [-h] -o OUT_FILE [-y] [--fix-elevation DEM_FILE [DEM_FILE ...]] [--dem-crs DEM_CRS] [--elevation-smoothing-window METERS] [--grade-calculation-window METERS] IN_FILE
 
 positional arguments:
-  IN_FILE               Path to input file (.gpx or .fit).
+  IN_FILE               Path to input file (.gpx, .fit, .vbo).
 
 options:
   -h, --help            show this help message and exit
-  -o, --output OUT_FILE
+  -o OUT_FILE, --output OUT_FILE
                         Path to the output file.
   -y, --yes             Accept questions (e.g. overwrite existing output file).
   --fix-elevation DEM_FILE [DEM_FILE ...]
@@ -93,22 +93,24 @@ $ gpst plot -h
 usage: gpst plot [-h] -x X_AXIS -y Y_AXIS [Y_AXIS ...] [--y-right Y_AXIS_RIGHT [Y_AXIS_RIGHT ...]] [-t {line,scatter}] [--type-right {line,scatter}] [--width WIDTH] [--height HEIGHT] [-o OUTPUT] FILE
 
 positional arguments:
-  FILE                  Path to input file (.gpx or .fit).
+  FILE                  Path to input file (.gpx, .fit, .vbo).
 
 options:
   -h, --help            show this help message and exit
-  -x, --x-axis X_AXIS   Field to use for the x-axis.
-  -y, --y-axis Y_AXIS [Y_AXIS ...]
+  -x X_AXIS, --x-axis X_AXIS
+                        Field to use for the x-axis.
+  -y Y_AXIS [Y_AXIS ...], --y-axis Y_AXIS [Y_AXIS ...]
                         Field to use for the y-axis.
   --y-right Y_AXIS_RIGHT [Y_AXIS_RIGHT ...]
                         Field to use for the y-axis on the right side.
-  -t, --type {line,scatter}
+  -t {line,scatter}, --type {line,scatter}
                         Plot type: line, scatter. Default is line.
   --type-right {line,scatter}
                         Plot type for right y-axis: line, scatter. Default is line.
   --width WIDTH         Width of the output image in pixels (default: 2048).
   --height HEIGHT       Height of the output image in pixels (default: 1024).
-  -o, --output OUTPUT   Path to the output image file. If not provided, shows the plot interactively.
+  -o OUTPUT, --output OUTPUT
+                        Path to the output image file. If not provided, shows the plot interactively.
 ```
 
 Example:
@@ -123,11 +125,10 @@ Example:
 
 ```
 $ gpst map -h
-usage: gpst map [-h] [--dem DEM_FILE [DEM_FILE ...]] [--dem-crs DEM_CRS] [--width WIDTH] [--height HEIGHT] [--line-width LINE_WIDTH] [-o OUTPUT] [--show-title] [--trim {tight,box}]
-                FILE
+usage: gpst map [-h] [--dem DEM_FILE [DEM_FILE ...]] [--dem-crs DEM_CRS] [--width WIDTH] [--height HEIGHT] [--line-width LINE_WIDTH] [-o OUTPUT] [--show-title] [--trim {tight,box}] FILE
 
 positional arguments:
-  FILE                  Path to input file (.gpx or .fit).
+  FILE                  Path to input file (.gpx, .fit, .vbo).
 
 options:
   -h, --help            show this help message and exit
@@ -138,7 +139,8 @@ options:
   --height HEIGHT       Height of the output image in pixels (default: 4096).
   --line-width LINE_WIDTH
                         Width of the track line (default: 2.5).
-  -o, --output OUTPUT   Path to the output image file. If not provided, shows the map interactively.
+  -o OUTPUT, --output OUTPUT
+                        Path to the output image file. If not provided, shows the map interactively.
   --show-title          Show the activity name as the title of the map.
   --trim {tight,box}    Trim the map to the track bounds.
 ```
