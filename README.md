@@ -39,21 +39,7 @@ options:
 ### gpst process
 
 ```
-$ gpst -h
-usage: gpst [-h] [--version] tool ...
-
-GPS Tools - A collection of tools to work with GPS track files.
-
-positional arguments:
-  tool        Available tools:
-    map       Draw map of input file.
-    plot      Plot data from the input file.
-    process   Process GPS track file and write results to a GPX file.
-
-options:
-  -h, --help  show this help message and exit
-  --version   show program's version number and exit
-[neri@ikar gpst]$ uv run gpst process -h
+$ gpst process -h
 usage: gpst process [-h] -o OUT_FILE [-y] [--fix-elevation DEM_FILE [DEM_FILE ...]] [--dem-crs DEM_CRS] [--elevation-smoothing-window METERS] [--grade-calculation-window METERS] IN_FILE
 
 positional arguments:
