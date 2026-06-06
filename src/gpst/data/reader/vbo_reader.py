@@ -98,6 +98,6 @@ class VboReader(Reader):
                         case _:
                             data[col] = val
 
-                track.upsert_point(data['time'], data, supress_unknown=True)
+                track.upsert_point(data['time'], data, custom_fields=True)
 
         return track

@@ -16,14 +16,16 @@ namespace_urls = {
     'xsi': "http://www.w3.org/2001/XMLSchema-instance",
     'tpx': "http://www.garmin.com/xmlschemas/TrackPointExtension/v2",
     'adx': "http://www.n3r1.com/xmlschemas/ActivityDataExtensions/v11",
-    'asx': "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensions/v11"
+    'asx': "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensions/v11",
+    'gpst': "http://www.n3r1.com/xmlschemas/CustomDataExtensions/v11"
 }
 
 namespace_schemas = {
     '': "http://www.topografix.com/GPX/1/1/gpx.xsd",
     'tpx': "http://www.garmin.com/xmlschemas/TrackPointExtensionv2.xsd",
     'adx': "http://www.n3r1.com/xmlschemas/ActivityDataExtensionsv11.xsd",
-    'asx': "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensionsv11.xsd"
+    'asx': "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensionsv11.xsd",
+    'gpst': "http://www.n3r1.com/xmlschemas/CustomDataExtensionsv0.xsd"
 }
 
 tag = SimpleNamespace(
@@ -31,6 +33,7 @@ tag = SimpleNamespace(
     tpx="{" + namespace_urls['tpx'] + "}",
     adx="{" + namespace_urls['adx'] + "}",
     asx="{" + namespace_urls['asx'] + "}",
+    gpst="{" + namespace_urls['gpst'] + "}"
 )
 
 
@@ -336,14 +339,14 @@ class GpxWriter(Writer):
     def _create_trkpt_elements(self, trkseg: ET.Element, track: Track) -> list[ET.Element]:
         trkpts = []
         for timestamp, data in track.points_iter:
-            trkpt = self._create_trkpt_element(trkseg, timestamp, data)
+            trkpt = self._create_trkpt_element(trkseg, timestamp, data, track)
             if trkpt:
                 trkpts.append(trkpt)
         logger.debug(f"Created {len(trkpts)} track points in GPX.")
         return trkpts
 
 
-    def _create_trkpt_element(self, trkseg: ET.Element, timestamp: datetime, data: dict) -> ET.Element | None:
+    def _create_trkpt_element(self, trkseg: ET.Element, timestamp: datetime, data: dict, track: Track) -> ET.Element | None:
         if 'lat' not in data or 'lon' not in data:
             logger.warning("Skipping record without position when generating gpx file")
             return None
@@ -445,6 +448,12 @@ class GpxWriter(Writer):
             ET.SubElement(trkpt_adx, f"{tag.adx}jumptime").text = str(data['jumptime'])
         if 'jumpscore' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}jumpscore").text = str(data['jumpscore'])
+
+        if len(track.custom_fields):
+            trkpt_gpst = ET.SubElement(trkpt_ext, f"{tag.gpst}CustomDataExtension")
+            for key in track.custom_fields:
+                if key in data:
+                    ET.SubElement(trkpt_gpst, f"{tag.gpst}{key}").text = str(data[key])
 
         return trkpt
 
