@@ -4,9 +4,9 @@ from enum import StrEnum
 from pathlib import Path
 
 from gpst.utils.logger import logger
+from gpst.utils.helpers import geo_distance, find_closest_point_on_line, lines_intersect
 
-from gpst.utils.helpers import geo_distance, find_closest_point_on_line
-
+from ..track import Track
 
 @dataclass
 class Point:
@@ -16,7 +16,6 @@ class Point:
 
 class GateType(StrEnum):
     FINISH = "finish"
-    SECTOR = "sector"
     PIT_ENTRY = "pit_entry"
     PIT_EXIT = "pit_exit"
 
@@ -72,10 +71,91 @@ class Racetrack:
         self.debug()
 
 
-    def calculate_racetrack_data(self, track):
-        # TODO Implement the logic to calculate racetrack data based on the provided track
-        # This is a placeholder implementation; replace it with actual logic
-        return track  # Return the modified track with racetrack data
+    def calculate_racetrack_data(self, track: Track):
+
+        class State(StrEnum):
+            UNKNOWN = "unknown"
+            ON_TRACK = "on_track"
+            IN_PITLANE = "in_pitlane"
+
+        state = State.UNKNOWN
+        lap = 0
+
+        lap_start_time = None
+        pit_entry_time = None
+        lap_times = []
+        pit_times = []
+
+        last_ts = None
+        last_tp = None
+
+        for ts, tp in track.points_iter:
+            if 'lat' not in tp or 'lon' not in tp:
+                continue
+
+            if last_tp is not None:
+                gates_crossed = self._detect_gates_crossed(last_tp[0], last_tp[1], tp['lat'], tp['lon'])
+                if gates_crossed:
+                    logger.debug(f"Gates crossed between {last_tp} and {(tp['lat'], tp['lon'])}: {[g.type for g in gates_crossed]}")
+
+                for gate in gates_crossed:
+                    gate_ts = self._interpolate_gate_crossing_time(last_tp, last_ts, (tp['lat'], tp['lon']), ts, gate)
+
+                    if gate.type == GateType.PIT_EXIT:
+                        state = State.ON_TRACK
+
+                        if pit_entry_time is not None:
+                            pit_time = gate_ts - pit_entry_time
+                            pit_times.append(pit_time)
+                            logger.info(f"Pit stop completed in {pit_time}.")
+
+                            # TODO store pit stop metadata as segment
+
+                        lap_start_time = None #invalidate lap time
+                        pit_entry_time = None #invalidate pit entry time
+
+                    if gate.type == GateType.PIT_ENTRY:
+                        state = State.IN_PITLANE
+                        lap_start_time = None #invalidate lap time
+                        pit_entry_time = gate_ts #store pit entry time
+
+                    if gate.type == GateType.FINISH:
+                        if state == State.UNKNOWN:
+                            state = State.ON_TRACK # only if state was unknown update to on_track
+
+                        if lap_start_time is not None:
+                            lap_time = gate_ts - lap_start_time
+                            lap_times.append(lap_time)
+                            logger.info(f"Lap {lap} completed in {lap_time}.")
+
+                            # TODO store lap metadata as segment
+                        
+                        if state == State.ON_TRACK:
+                            lap_start_time = gate_ts #start new lap time when crossing finish line on track
+
+                        lap += 1
+
+                if state == State.ON_TRACK:
+                    tp['rt_lap_distance'] = self._calculate_distance_along_track((tp['lat'], tp['lon']))
+
+
+                # TODO calculate distance along track and store in track point metadata
+                #   find two closest points on racetrack to current track point
+                #   calculate distance to each racetrack points, calculate weighted average of the two distances, store as distance in trackpoint
+
+                # TODO store lap time metadata and all needed data in track metadata
+                # TODO store delta to best lap time, delta to best lap time so far in track point metadata
+
+                # TODO minisectors if needed?
+
+
+            tp['rt_lap'] = lap
+            tp['rt_state'] = state.value
+
+            last_ts = ts
+            last_tp = (tp['lat'], tp['lon'])
+
+        return track
 
 
     def find_gate(self, gate_type: GateType) -> Gate | None:
@@ -89,20 +169,76 @@ class Racetrack:
         return [gate for gate in self.gates if gate.type == gate_type]
 
 
+    def _detect_gates_crossed(self, lat1: float, lon1: float, lat2: float, lon2: float) -> list[Gate]:
+        crossed_gates = []
+        for gate in self.gates:
+            if lines_intersect(lat1, lon1, lat2, lon2, gate.p1[0], gate.p1[1], gate.p2[0], gate.p2[1]):
+                crossed_gates.append(gate)
+        return crossed_gates
+
+
+    def _interpolate_gate_crossing_time(self, p1: tuple[float, float], t1, p2: tuple[float, float], t2, gate: Gate):
+        # Interpolate the time of crossing the gate based on the positions and timestamps of the two track points
+        # This assumes linear movement between the two points
+
+        # Calculate distances from p1 and p2 to the gate line
+        d1 = geo_distance(p1[0], p1[1], gate.p1[0], gate.p1[1]) + geo_distance(p1[0], p1[1], gate.p2[0], gate.p2[1])
+        d2 = geo_distance(p2[0], p2[1], gate.p1[0], gate.p1[1]) + geo_distance(p2[0], p2[1], gate.p2[0], gate.p2[1])
+
+        total_distance = d1 + d2
+        if total_distance == 0:
+            return t1  # If both points are at the same location, return the first timestamp
+
+        # Calculate the proportion of the distance to interpolate
+        proportion = d1 / total_distance
+
+        # Interpolate the timestamp
+        interpolated_time = t1 + (t2 - t1) * proportion
+        return interpolated_time
+
+    
+    def _calculate_distance_along_track(self, point: tuple[float, float]) -> float:
+        # Find two closest point on the track to the given point
+        # Calculate distance to each track point, calculate weighted average of the two track points distances, return as distance along track
+        closest_point = None
+        second_closest_point = None
+        closest_distance = float('inf')
+        second_closest_distance = float('inf')
+
+        for track_point in self.track_points:
+            dist = geo_distance(point[0], point[1], track_point.point[0], track_point.point[1])
+            if dist < closest_distance:
+                second_closest_point = closest_point
+                second_closest_distance = closest_distance
+                closest_point = track_point
+                closest_distance = dist
+            elif dist < second_closest_distance:
+                second_closest_point = track_point
+                second_closest_distance = dist
+        if closest_point is None or second_closest_point is None:
+            return 0.0
+        total_distance = closest_distance + second_closest_distance
+        if total_distance == 0:
+            return closest_point.distance  # If both track points are at the same location, return the distance of the closest point
+        proportion = closest_distance / total_distance
+        distance_along_track = closest_point.distance * (1 - proportion) + second_closest_point.distance * proportion
+        return distance_along_track
+
+
     def debug(self):
         for gate in self.gates:
-            logger.debug(f"Gate: {gate.type} - P1: {gate.p1}, P2: {gate.p2}")
+            logger.debug(f"RACETRACK Gate: {gate.type} - P1: {gate.p1}, P2: {gate.p2}")
         
         for point in self.track_points:
-            logger.debug(f"{point.distance:.2f}m: Track Point: {point.point}")
+            logger.debug(f"RACETRACK {point.distance:.2f}m: Track Point: {point.point}")
 
 
-def load_racetrack(racetrack_path):
+def load_racetrack(racetrack_path) -> Racetrack:
+    #TODO minisector distance? count? definition in track file
     rt = Racetrack()
 
     valid_sections = {
         "finish_line",
-        "sector_lines",
         "pit_entry",
         "pit_exit",
         "track",
@@ -118,6 +254,9 @@ def load_racetrack(racetrack_path):
             line = raw_line.strip()
 
             if not line:
+                continue
+
+            if line.startswith("#"):
                 continue
 
             if line.startswith("[") and line.endswith("]"):
@@ -187,10 +326,6 @@ def load_racetrack(racetrack_path):
 
     finish_p1, finish_p2 = parse_gate(*finish_lines[0], "finish_line")
     rt.add_gate(finish_p1, finish_p2, GateType.FINISH)
-
-    for line_number, line in section_lines["sector_lines"]:
-        p1, p2 = parse_gate(line_number, line, "sector_lines")
-        rt.add_gate(p1, p2, GateType.SECTOR)
 
     if section_counts["pit_entry"] == 1:
         pit_entry_p1, pit_entry_p2 = parse_gate(*pit_entry_lines[0], "pit_entry")

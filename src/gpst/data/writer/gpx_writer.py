@@ -17,7 +17,8 @@ namespace_urls = {
     'tpx': "http://www.garmin.com/xmlschemas/TrackPointExtension/v2",
     'adx': "http://www.n3r1.com/xmlschemas/ActivityDataExtensions/v11",
     'asx': "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensions/v11",
-    'gpst': "http://www.n3r1.com/xmlschemas/CustomDataExtensions/v0"
+    'rtx': "http://www.n3r1.com/xmlschemas/RaceTrackExtensions/v1",
+    'gpst': "http://www.n3r1.com/xmlschemas/CustomDataExtensions/v0",
 }
 
 namespace_schemas = {
@@ -25,7 +26,8 @@ namespace_schemas = {
     'tpx': "http://www.garmin.com/xmlschemas/TrackPointExtensionv2.xsd",
     'adx': "http://www.n3r1.com/xmlschemas/ActivityDataExtensionsv11.xsd",
     'asx': "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensionsv11.xsd",
-    'gpst': "http://www.n3r1.com/xmlschemas/CustomDataExtensionsv0.xsd"
+    'rtx': "http://www.n3r1.com/xmlschemas/RaceTrackExtensionsv1.xsd",
+    'gpst': "http://www.n3r1.com/xmlschemas/CustomDataExtensionsv0.xsd",
 }
 
 tag = SimpleNamespace(
@@ -33,6 +35,7 @@ tag = SimpleNamespace(
     tpx="{" + namespace_urls['tpx'] + "}",
     adx="{" + namespace_urls['adx'] + "}",
     asx="{" + namespace_urls['asx'] + "}",
+    rtx="{" + namespace_urls['rtx'] + "}",
     gpst="{" + namespace_urls['gpst'] + "}"
 )
 
@@ -448,6 +451,17 @@ class GpxWriter(Writer):
             ET.SubElement(trkpt_adx, f"{tag.adx}jumptime").text = str(data['jumptime'])
         if 'jumpscore' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}jumpscore").text = str(data['jumpscore'])
+
+        if any(k in data for k in ('rt_lap', 'rt_state', 'rt_lap_distance')):
+            # TODO check by rt_ prefix?
+            trkpt_rtx = ET.SubElement(trkpt_ext, f"{tag.rtx}RaceTrackExtension")
+
+            if 'rt_lap' in data:
+                ET.SubElement(trkpt_rtx, f"{tag.rtx}rtx_lap").text = str(data['rt_lap'])
+            if 'rt_state' in data:
+                ET.SubElement(trkpt_rtx, f"{tag.rtx}rtx_state").text = str(data['rt_state'])
+            if 'rt_lap_distance' in data:
+                ET.SubElement(trkpt_rtx, f"{tag.rtx}rtx_lap_distance").text = str(data['rt_lap_distance'])
 
         if len(track.custom_fields):
             trkpt_gpst = ET.SubElement(trkpt_ext, f"{tag.gpst}CustomDataExtension")

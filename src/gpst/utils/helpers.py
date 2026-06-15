@@ -82,3 +82,28 @@ def find_closest_point_on_line(lat: float, lon: float, line_start: tuple[float, 
 
     closest_point_latlon = cartesian_to_latlon(closest_point_cartesian[0], closest_point_cartesian[1])
     return closest_point_latlon
+
+
+def lines_intersect(lat1: float, lon1: float, lat2: float, lon2: float, lat3: float, lon3: float, lat4: float, lon4: float) -> bool:
+    # This function checks if the line segment from (lat1, lon1) to (lat2, lon2) intersects with the line segment from (lat3, lon3) to (lat4, lon4)
+    def orientation(p: tuple[float, float], q: tuple[float, float], r: tuple[float, float]) -> int:
+        val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1])
+        if val == 0:
+            return 0  # collinear
+        return 1 if val > 0 else 2  # clock or counterclock wise
+
+    p1 = (lat1, lon1)
+    q1 = (lat2, lon2)
+    p2 = (lat3, lon3)
+    q2 = (lat4, lon4)
+
+    o1 = orientation(p1, q1, p2)
+    o2 = orientation(p1, q1, q2)
+    o3 = orientation(p2, q2, p1)
+    o4 = orientation(p2, q2, q1)
+
+    if o1 != o2 and o3 != o4:
+        return True
+
+    return False
+
