@@ -138,11 +138,6 @@ class Racetrack:
                 if state == State.ON_TRACK:
                     tp['rt_lap_distance'] = self._calculate_distance_along_track((tp['lat'], tp['lon']))
 
-
-                # TODO calculate distance along track and store in track point metadata
-                #   find two closest points on racetrack to current track point
-                #   calculate distance to each racetrack points, calculate weighted average of the two distances, store as distance in trackpoint
-
                 # TODO store lap time metadata and all needed data in track metadata
                 # TODO store delta to best lap time, delta to best lap time so far in track point metadata
 
