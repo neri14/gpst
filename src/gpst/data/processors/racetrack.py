@@ -1,6 +1,7 @@
 
 from dataclasses import dataclass
 from enum import StrEnum
+import math
 from pathlib import Path
 
 from gpst.utils.logger import logger
@@ -71,6 +72,14 @@ class Racetrack:
         self.debug()
 
 
+    #FIXME refer to errrors.png
+    #FIXME distance along track gets thrown off when passing finish line (between last and first point it's half the track length)
+    #FIXME there are strange jumps at the end of the track to max dist
+    #FIXME there are generally strange jumps every now and then
+
+
+
+    #FIXME verify implementation calculate_racetrack_data
     def calculate_racetrack_data(self, track: Track):
 
         class State(StrEnum):
@@ -88,6 +97,9 @@ class Racetrack:
 
         last_ts = None
         last_tp = None
+
+        # TODO debouncing gates so that gate crossing is not duplicated for noisy data
+        # TODO minisector handling in ascending order so that if distance along track is decreasing we don't count back
 
         for ts, tp in track.points_iter:
             if 'lat' not in tp or 'lon' not in tp:
@@ -172,52 +184,75 @@ class Racetrack:
         return crossed_gates
 
 
+    #FIXME verify implementation _interpolate_gate_crossing_time
     def _interpolate_gate_crossing_time(self, p1: tuple[float, float], t1, p2: tuple[float, float], t2, gate: Gate):
-        # Interpolate the time of crossing the gate based on the positions and timestamps of the two track points
-        # This assumes linear movement between the two points
+           # Interpolate the time of crossing the gate based on the positions and timestamps of the two track points
+           # Linear interpolation based on distance along the track segment
+           d1 = geo_distance(p1[0], p1[1], gate.p1[0], gate.p1[1]) + geo_distance(p1[0], p1[1], gate.p2[0], gate.p2[1])
+           d2 = geo_distance(p2[0], p2[1], gate.p1[0], gate.p1[1]) + geo_distance(p2[0], p2[1], gate.p2[0], gate.p2[1])
 
-        # Calculate distances from p1 and p2 to the gate line
-        d1 = geo_distance(p1[0], p1[1], gate.p1[0], gate.p1[1]) + geo_distance(p1[0], p1[1], gate.p2[0], gate.p2[1])
-        d2 = geo_distance(p2[0], p2[1], gate.p1[0], gate.p1[1]) + geo_distance(p2[0], p2[1], gate.p2[0], gate.p2[1])
+           total_distance = d1 + d2
+           if total_distance == 0:
+               return t1  # If both points are at the same location, return the first timestamp
 
-        total_distance = d1 + d2
-        if total_distance == 0:
-            return t1  # If both points are at the same location, return the first timestamp
+           # Linear interpolation: proportion based on point p1's distance to gate
+           proportion = d1 / total_distance
+           interpolated_time = t1 + (t2 - t1) * proportion
+           return interpolated_time
 
-        # Calculate the proportion of the distance to interpolate
-        proportion = d1 / total_distance
-
-        # Interpolate the timestamp
-        interpolated_time = t1 + (t2 - t1) * proportion
-        return interpolated_time
-
-    
+    #FIXME verify implementation _calculate_distance_along_track
     def _calculate_distance_along_track(self, point: tuple[float, float]) -> float:
-        # Find two closest point on the track to the given point
-        # Calculate distance to each track point, calculate weighted average of the two track points distances, return as distance along track
-        closest_point = None
-        second_closest_point = None
-        closest_distance = float('inf')
-        second_closest_distance = float('inf')
-
-        for track_point in self.track_points:
-            dist = geo_distance(point[0], point[1], track_point.point[0], track_point.point[1])
-            if dist < closest_distance:
-                second_closest_point = closest_point
-                second_closest_distance = closest_distance
-                closest_point = track_point
-                closest_distance = dist
-            elif dist < second_closest_distance:
-                second_closest_point = track_point
-                second_closest_distance = dist
-        if closest_point is None or second_closest_point is None:
+        if len(self.track_points) < 2:
             return 0.0
-        total_distance = closest_distance + second_closest_distance
-        if total_distance == 0:
-            return closest_point.distance  # If both track points are at the same location, return the distance of the closest point
-        proportion = closest_distance / total_distance
-        distance_along_track = closest_point.distance * (1 - proportion) + second_closest_point.distance * proportion
-        return distance_along_track
+
+        # Project the point onto each polyline segment and take the closest projection.
+        # This avoids pairing unrelated points from opposite sides of the finish line.
+        earth_radius = 6372797.5605
+        deg_to_rad = math.pi / 180.0
+
+        def to_local_xy(lat: float, lon: float, ref_lat: float, ref_lon: float) -> tuple[float, float]:
+            x = (lon - ref_lon) * math.cos(ref_lat * deg_to_rad) * earth_radius * deg_to_rad
+            y = (lat - ref_lat) * earth_radius * deg_to_rad
+            return x, y
+
+        best_perpendicular_distance = float('inf')
+        best_distance_along_track = 0.0
+
+        for p1, p2 in zip(self.track_points, self.track_points[1:]):
+            lat1, lon1 = p1.point
+            lat2, lon2 = p2.point
+
+            # Use a local tangent plane around the segment for stable projection math.
+            ref_lat = (lat1 + lat2 + point[0]) / 3.0
+            ref_lon = (lon1 + lon2 + point[1]) / 3.0
+
+            ax, ay = to_local_xy(lat1, lon1, ref_lat, ref_lon)
+            bx, by = to_local_xy(lat2, lon2, ref_lat, ref_lon)
+            px, py = to_local_xy(point[0], point[1], ref_lat, ref_lon)
+
+            vx = bx - ax
+            vy = by - ay
+            wx = px - ax
+            wy = py - ay
+            segment_len_sq = vx * vx + vy * vy
+
+            if segment_len_sq == 0.0:
+                t = 0.0
+                proj_x, proj_y = ax, ay
+            else:
+                t = (wx * vx + wy * vy) / segment_len_sq
+                t = max(0.0, min(1.0, t))
+                proj_x = ax + t * vx
+                proj_y = ay + t * vy
+
+            perpendicular_distance = math.hypot(px - proj_x, py - proj_y)
+            if perpendicular_distance >= best_perpendicular_distance:
+                continue
+
+            best_perpendicular_distance = perpendicular_distance
+            best_distance_along_track = p1.distance + (p2.distance - p1.distance) * t
+
+        return best_distance_along_track
 
 
     def debug(self):
@@ -227,7 +262,7 @@ class Racetrack:
         for point in self.track_points:
             logger.debug(f"RACETRACK {point.distance:.2f}m: Track Point: {point.point}")
 
-
+#FIXME verify implementation load_racetrack
 def load_racetrack(racetrack_path) -> Racetrack:
     #TODO minisector distance? count? definition in track file
     rt = Racetrack()
