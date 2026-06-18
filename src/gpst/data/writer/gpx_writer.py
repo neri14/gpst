@@ -1,6 +1,8 @@
 import xml.etree.ElementTree as ET
 
+import math
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from types import SimpleNamespace
 from xml.dom import minidom
@@ -41,6 +43,27 @@ tag = SimpleNamespace(
 
 
 class GpxWriter(Writer):
+    def _to_text(self, value: int | float | str | datetime | None) -> str:
+        if isinstance(value, float):
+            # Keep GPX numeric values in plain decimal form (no scientific notation).
+            if math.isnan(value) or math.isinf(value):
+                return str(value)
+
+            try:
+                text = format(Decimal(str(value)), 'f')
+            except (InvalidOperation, ValueError):
+                return str(value)
+
+            if '.' in text:
+                text = text.rstrip('0').rstrip('.')
+
+            if text in ('', '-0'):
+                return '0'
+
+            return text
+
+        return to_string(value)
+
     def write(self, track: Track, path: Path) -> bool:
         logger.debug(f"Writing GPX file to '{path}'...")
 
@@ -79,25 +102,25 @@ class GpxWriter(Writer):
             ET.SubElement(metadata, f"{tag.gpx}time").text = to_string(track.metadata['start_time'])
         if all(k in track.metadata for k in ('minlat', 'minlon', 'maxlat', 'maxlon')):
             ET.SubElement(metadata, f"{tag.gpx}bounds", {
-                'minlat': str(track.metadata['minlat']),
-                'minlon':  str(track.metadata['minlon']),
-                'maxlat': str(track.metadata['maxlat']),
-                'maxlon': str(track.metadata['maxlon']),
+                'minlat': self._to_text(track.metadata['minlat']),
+                'minlon':  self._to_text(track.metadata['minlon']),
+                'maxlat': self._to_text(track.metadata['maxlat']),
+                'maxlon': self._to_text(track.metadata['maxlon']),
             })
         return metadata
 
 
     def _create_trk_element(self, gpx: ET.Element, track: Track) -> ET.Element:
         trk = ET.SubElement(gpx, f"{tag.gpx}trk")
-        ET.SubElement(trk, f"{tag.gpx}name").text = str(track.metadata['name']) if 'name' in track.metadata else "Unnamed Activity"
+        ET.SubElement(trk, f"{tag.gpx}name").text = self._to_text(track.metadata['name']) if 'name' in track.metadata else "Unnamed Activity"
 
         if 'device' in track.metadata:
-            ET.SubElement(trk, f"{tag.gpx}src").text = str(track.metadata['device'])
+            ET.SubElement(trk, f"{tag.gpx}src").text = self._to_text(track.metadata['device'])
 
         track_type = track.metadata['sport'] if 'sport' in track.metadata else "other"
         if 'sub_sport' in track.metadata:
             track_type = f"{track.metadata['sub_sport']}_{track_type}"
-        ET.SubElement(trk, f"{tag.gpx}type").text = str(track_type)
+        ET.SubElement(trk, f"{tag.gpx}type").text = self._to_text(track_type)
 
         return trk
 
@@ -116,89 +139,89 @@ class GpxWriter(Writer):
         trk_adx = ET.SubElement(trk_ext, f"{tag.adx}ActivityTrackExtension")
  
         if 'total_elapsed_time' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}elapsedtime").text = str(track.metadata['total_elapsed_time'])
+            ET.SubElement(trk_adx, f"{tag.adx}elapsedtime").text = self._to_text(track.metadata['total_elapsed_time'])
         if 'total_timer_time' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}timertime").text = str(track.metadata['total_timer_time'])
+            ET.SubElement(trk_adx, f"{tag.adx}timertime").text = self._to_text(track.metadata['total_timer_time'])
         if 'total_distance' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}distance").text = str(track.metadata['total_distance'])
+            ET.SubElement(trk_adx, f"{tag.adx}distance").text = self._to_text(track.metadata['total_distance'])
         elif 'total_track_distance' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}distance").text = str(track.metadata['total_track_distance'])
+            ET.SubElement(trk_adx, f"{tag.adx}distance").text = self._to_text(track.metadata['total_track_distance'])
         if 'total_ascent' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}ascent").text = str(track.metadata['total_ascent'])
+            ET.SubElement(trk_adx, f"{tag.adx}ascent").text = self._to_text(track.metadata['total_ascent'])
         if 'total_descent' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}descent").text = str(track.metadata['total_descent'])
+            ET.SubElement(trk_adx, f"{tag.adx}descent").text = self._to_text(track.metadata['total_descent'])
         if 'max_grade' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}maxgrade").text = str(track.metadata['max_grade'])
+            ET.SubElement(trk_adx, f"{tag.adx}maxgrade").text = self._to_text(track.metadata['max_grade'])
         if 'min_grade' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}mingrade").text = str(track.metadata['min_grade'])
+            ET.SubElement(trk_adx, f"{tag.adx}mingrade").text = self._to_text(track.metadata['min_grade'])
         if 'max_elevation' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}maxele").text = str(track.metadata['max_elevation'])
+            ET.SubElement(trk_adx, f"{tag.adx}maxele").text = self._to_text(track.metadata['max_elevation'])
         if 'min_elevation' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}minele").text = str(track.metadata['min_elevation'])
+            ET.SubElement(trk_adx, f"{tag.adx}minele").text = self._to_text(track.metadata['min_elevation'])
         if 'total_cycles' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}cycles").text = str(track.metadata['total_cycles'])
+            ET.SubElement(trk_adx, f"{tag.adx}cycles").text = self._to_text(track.metadata['total_cycles'])
         if 'total_strokes' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}strokes").text = str(track.metadata['total_strokes'])
+            ET.SubElement(trk_adx, f"{tag.adx}strokes").text = self._to_text(track.metadata['total_strokes'])
         if 'total_work' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}work").text = str(track.metadata['total_work'])
+            ET.SubElement(trk_adx, f"{tag.adx}work").text = self._to_text(track.metadata['total_work'])
         if 'total_calories' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}kcal").text = str(track.metadata['total_calories'])
+            ET.SubElement(trk_adx, f"{tag.adx}kcal").text = self._to_text(track.metadata['total_calories'])
 
         if 'total_grit' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}grit").text = str(track.metadata['total_grit'])
+            ET.SubElement(trk_adx, f"{tag.adx}grit").text = self._to_text(track.metadata['total_grit'])
         if 'avg_flow' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}flow").text = str(track.metadata['avg_flow'])
+            ET.SubElement(trk_adx, f"{tag.adx}flow").text = self._to_text(track.metadata['avg_flow'])
         
         if 'avg_speed' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}avgspeed").text = str(track.metadata['avg_speed'])
+            ET.SubElement(trk_adx, f"{tag.adx}avgspeed").text = self._to_text(track.metadata['avg_speed'])
         elif 'avg_track_speed' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}avgspeed").text = str(track.metadata['avg_track_speed'])
+            ET.SubElement(trk_adx, f"{tag.adx}avgspeed").text = self._to_text(track.metadata['avg_track_speed'])
         if 'max_speed' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}maxspeed").text = str(track.metadata['max_speed'])
+            ET.SubElement(trk_adx, f"{tag.adx}maxspeed").text = self._to_text(track.metadata['max_speed'])
         elif 'max_track_speed' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}maxspeed").text = str(track.metadata['max_track_speed'])
+            ET.SubElement(trk_adx, f"{tag.adx}maxspeed").text = self._to_text(track.metadata['max_track_speed'])
         
         if 'avg_power' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}avgpower").text = str(track.metadata['avg_power'])
+            ET.SubElement(trk_adx, f"{tag.adx}avgpower").text = self._to_text(track.metadata['avg_power'])
         if 'max_power' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}maxpower").text = str(track.metadata['max_power'])
+            ET.SubElement(trk_adx, f"{tag.adx}maxpower").text = self._to_text(track.metadata['max_power'])
         if 'normalized_power' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}normpower").text = str(track.metadata['normalized_power'])
+            ET.SubElement(trk_adx, f"{tag.adx}normpower").text = self._to_text(track.metadata['normalized_power'])
 
         if 'avg_vam' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}avgvam").text = str(track.metadata['avg_vam'])
+            ET.SubElement(trk_adx, f"{tag.adx}avgvam").text = self._to_text(track.metadata['avg_vam'])
 
         if 'avg_respiration_rate' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}avgrr").text = str(track.metadata['avg_respiration_rate'])
+            ET.SubElement(trk_adx, f"{tag.adx}avgrr").text = self._to_text(track.metadata['avg_respiration_rate'])
         if 'max_respiration_rate' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}maxrr").text = str(track.metadata['max_respiration_rate'])
+            ET.SubElement(trk_adx, f"{tag.adx}maxrr").text = self._to_text(track.metadata['max_respiration_rate'])
         if 'min_respiration_rate' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}minrr").text = str(track.metadata['min_respiration_rate'])
+            ET.SubElement(trk_adx, f"{tag.adx}minrr").text = self._to_text(track.metadata['min_respiration_rate'])
         
         if 'jumps' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}jumps").text = str(track.metadata['jumps'])
+            ET.SubElement(trk_adx, f"{tag.adx}jumps").text = self._to_text(track.metadata['jumps'])
 
         if 'avg_heart_rate' in track.metadata:
             val = track.metadata['avg_heart_rate']
             if isinstance(val, float):
                 val = round(val)
-            ET.SubElement(trk_adx, f"{tag.adx}avghr").text = str(val)
+            ET.SubElement(trk_adx, f"{tag.adx}avghr").text = self._to_text(val)
         if 'max_heart_rate' in track.metadata:
             val = track.metadata['max_heart_rate']
             if isinstance(val, float):
                 val = round(val)
-            ET.SubElement(trk_adx, f"{tag.adx}maxhr").text = str(val)
+            ET.SubElement(trk_adx, f"{tag.adx}maxhr").text = self._to_text(val)
         if 'avg_cadence' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}avgcad").text = str(track.metadata['avg_cadence'])
+            ET.SubElement(trk_adx, f"{tag.adx}avgcad").text = self._to_text(track.metadata['avg_cadence'])
         if 'max_cadence' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}maxcad").text = str(track.metadata['max_cadence'])
+            ET.SubElement(trk_adx, f"{tag.adx}maxcad").text = self._to_text(track.metadata['max_cadence'])
 
         if 'avg_temperature' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}avgatemp").text = str(track.metadata['avg_temperature'])
+            ET.SubElement(trk_adx, f"{tag.adx}avgatemp").text = self._to_text(track.metadata['avg_temperature'])
         if 'max_temperature' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}maxatemp").text = str(track.metadata['max_temperature'])
+            ET.SubElement(trk_adx, f"{tag.adx}maxatemp").text = self._to_text(track.metadata['max_temperature'])
         if 'min_temperature' in track.metadata:
-            ET.SubElement(trk_adx, f"{tag.adx}minatemp").text = str(track.metadata['min_temperature'])
+            ET.SubElement(trk_adx, f"{tag.adx}minatemp").text = self._to_text(track.metadata['min_temperature'])
 
         return trk_adx
 
@@ -210,11 +233,11 @@ class GpxWriter(Writer):
             trk_seg = ET.SubElement(trk_asx, f"{tag.asx}segment")
 
             if 'name' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}name").text = str(segment['name'])
+                ET.SubElement(trk_seg, f"{tag.asx}name").text = self._to_text(segment['name'])
             if 'type' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}type").text = str(segment['type'])
+                ET.SubElement(trk_seg, f"{tag.asx}type").text = self._to_text(segment['type'])
             if 'source' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}source").text = str(segment['source'])
+                ET.SubElement(trk_seg, f"{tag.asx}source").text = self._to_text(segment['source'])
             
             if 'start_time' in segment:
                 ET.SubElement(trk_seg, f"{tag.asx}starttime").text = to_string(segment['start_time'])
@@ -222,114 +245,114 @@ class GpxWriter(Writer):
                 ET.SubElement(trk_seg, f"{tag.asx}endtime").text = to_string(segment['end_time'])
 
             if 'start_timer' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}starttimer").text = str(segment['start_timer'])
+                ET.SubElement(trk_seg, f"{tag.asx}starttimer").text = self._to_text(segment['start_timer'])
             if 'end_timer' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}endtimer").text = str(segment['end_timer'])
+                ET.SubElement(trk_seg, f"{tag.asx}endtimer").text = self._to_text(segment['end_timer'])
 
             if 'start_distance' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}startdist").text = str(segment['start_distance'])
+                ET.SubElement(trk_seg, f"{tag.asx}startdist").text = self._to_text(segment['start_distance'])
             if 'end_distance' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}enddist").text = str(segment['end_distance'])
+                ET.SubElement(trk_seg, f"{tag.asx}enddist").text = self._to_text(segment['end_distance'])
 
             if 'start_elevation' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}startele").text = str(segment['start_elevation'])
+                ET.SubElement(trk_seg, f"{tag.asx}startele").text = self._to_text(segment['start_elevation'])
             if 'end_elevation' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}endele").text = str(segment['end_elevation'])
+                ET.SubElement(trk_seg, f"{tag.asx}endele").text = self._to_text(segment['end_elevation'])
 
             if 'start_ascent' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}startasc").text = str(segment['start_ascent'])
+                ET.SubElement(trk_seg, f"{tag.asx}startasc").text = self._to_text(segment['start_ascent'])
             if 'end_ascent' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}endasc").text = str(segment['end_ascent'])
+                ET.SubElement(trk_seg, f"{tag.asx}endasc").text = self._to_text(segment['end_ascent'])
             if 'start_descent' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}startdesc").text = str(segment['start_descent'])
+                ET.SubElement(trk_seg, f"{tag.asx}startdesc").text = self._to_text(segment['start_descent'])
             if 'end_descent' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}enddesc").text = str(segment['end_descent'])
+                ET.SubElement(trk_seg, f"{tag.asx}enddesc").text = self._to_text(segment['end_descent'])
 
             if 'start_latitude' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}startlat").text = str(segment['start_latitude'])
+                ET.SubElement(trk_seg, f"{tag.asx}startlat").text = self._to_text(segment['start_latitude'])
             if 'start_longitude' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}startlon").text = str(segment['start_longitude'])
+                ET.SubElement(trk_seg, f"{tag.asx}startlon").text = self._to_text(segment['start_longitude'])
             if 'end_latitude' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}endlat").text = str(segment['end_latitude'])
+                ET.SubElement(trk_seg, f"{tag.asx}endlat").text = self._to_text(segment['end_latitude'])
             if 'end_longitude' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}endlon").text = str(segment['end_longitude'])
+                ET.SubElement(trk_seg, f"{tag.asx}endlon").text = self._to_text(segment['end_longitude'])
 
             if 'minlat' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}minlat").text = str(segment['minlat'])
+                ET.SubElement(trk_seg, f"{tag.asx}minlat").text = self._to_text(segment['minlat'])
             if 'minlon' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}minlon").text = str(segment['minlon'])
+                ET.SubElement(trk_seg, f"{tag.asx}minlon").text = self._to_text(segment['minlon'])
             if 'maxlat' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}maxlat").text = str(segment['maxlat'])
+                ET.SubElement(trk_seg, f"{tag.asx}maxlat").text = self._to_text(segment['maxlat'])
             if 'maxlon' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}maxlon").text = str(segment['maxlon'])
+                ET.SubElement(trk_seg, f"{tag.asx}maxlon").text = self._to_text(segment['maxlon'])
 
             if 'total_elapsed_time' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}elapsedtime").text = str(segment['total_elapsed_time'])
+                ET.SubElement(trk_seg, f"{tag.asx}elapsedtime").text = self._to_text(segment['total_elapsed_time'])
             if 'total_timer_time' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}timertime").text = str(segment['total_timer_time'])
+                ET.SubElement(trk_seg, f"{tag.asx}timertime").text = self._to_text(segment['total_timer_time'])
             if 'total_distance' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}distance").text = str(segment['total_distance'])
+                ET.SubElement(trk_seg, f"{tag.asx}distance").text = self._to_text(segment['total_distance'])
             if 'total_ascent' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}ascent").text = str(segment['total_ascent'])
+                ET.SubElement(trk_seg, f"{tag.asx}ascent").text = self._to_text(segment['total_ascent'])
             if 'total_descent' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}descent").text = str(segment['total_descent'])
+                ET.SubElement(trk_seg, f"{tag.asx}descent").text = self._to_text(segment['total_descent'])
 
             if 'avg_grade' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}avggrade").text = str(segment['avg_grade'])
+                ET.SubElement(trk_seg, f"{tag.asx}avggrade").text = self._to_text(segment['avg_grade'])
             if 'max_grade' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}maxgrade").text = str(segment['max_grade'])
+                ET.SubElement(trk_seg, f"{tag.asx}maxgrade").text = self._to_text(segment['max_grade'])
             if 'min_grade' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}mingrade").text = str(segment['min_grade'])
+                ET.SubElement(trk_seg, f"{tag.asx}mingrade").text = self._to_text(segment['min_grade'])
 
             if 'max_elevation' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}maxele").text = str(segment['max_elevation'])
+                ET.SubElement(trk_seg, f"{tag.asx}maxele").text = self._to_text(segment['max_elevation'])
             if 'min_elevation' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}minele").text = str(segment['min_elevation'])
+                ET.SubElement(trk_seg, f"{tag.asx}minele").text = self._to_text(segment['min_elevation'])
 
             if 'avg_speed' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}avgspeed").text = str(segment['avg_speed'])
+                ET.SubElement(trk_seg, f"{tag.asx}avgspeed").text = self._to_text(segment['avg_speed'])
             if 'max_speed' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}maxspeed").text = str(segment['max_speed'])
+                ET.SubElement(trk_seg, f"{tag.asx}maxspeed").text = self._to_text(segment['max_speed'])
 
             if 'avg_vam' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}avgvam").text = str(segment['avg_vam'])
+                ET.SubElement(trk_seg, f"{tag.asx}avgvam").text = self._to_text(segment['avg_vam'])
 
             if 'avg_power' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}avgpower").text = str(segment['avg_power'])
+                ET.SubElement(trk_seg, f"{tag.asx}avgpower").text = self._to_text(segment['avg_power'])
             if 'max_power' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}maxpower").text = str(segment['max_power'])
+                ET.SubElement(trk_seg, f"{tag.asx}maxpower").text = self._to_text(segment['max_power'])
             if 'normalized_power' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}normpower").text = str(segment['normalized_power'])
+                ET.SubElement(trk_seg, f"{tag.asx}normpower").text = self._to_text(segment['normalized_power'])
 
             if 'avg_heart_rate' in segment:
                 val = segment['avg_heart_rate']
                 if isinstance(val, float):
                     val = round(val)
-                ET.SubElement(trk_seg, f"{tag.asx}avghr").text = str(val)
+                ET.SubElement(trk_seg, f"{tag.asx}avghr").text = self._to_text(val)
             if 'max_heart_rate' in segment:
                 val = segment['max_heart_rate']
                 if isinstance(val, float):
                     val = round(val)
-                ET.SubElement(trk_seg, f"{tag.asx}maxhr").text = str(val)
+                ET.SubElement(trk_seg, f"{tag.asx}maxhr").text = self._to_text(val)
 
             if 'avg_cadence' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}avgcad").text = str(segment['avg_cadence'])
+                ET.SubElement(trk_seg, f"{tag.asx}avgcad").text = self._to_text(segment['avg_cadence'])
             if 'max_cadence' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}maxcad").text = str(segment['max_cadence'])
+                ET.SubElement(trk_seg, f"{tag.asx}maxcad").text = self._to_text(segment['max_cadence'])
 
             if 'total_cycles' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}cycles").text = str(segment['total_cycles'])
+                ET.SubElement(trk_seg, f"{tag.asx}cycles").text = self._to_text(segment['total_cycles'])
             if 'total_strokes' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}strokes").text = str(segment['total_strokes'])
+                ET.SubElement(trk_seg, f"{tag.asx}strokes").text = self._to_text(segment['total_strokes'])
             if 'total_work' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}work").text = str(segment['total_work'])
+                ET.SubElement(trk_seg, f"{tag.asx}work").text = self._to_text(segment['total_work'])
             if 'total_calories' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}kcal").text = str(segment['total_calories'])
+                ET.SubElement(trk_seg, f"{tag.asx}kcal").text = self._to_text(segment['total_calories'])
 
             if 'total_grit' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}grit").text = str(segment['total_grit'])
+                ET.SubElement(trk_seg, f"{tag.asx}grit").text = self._to_text(segment['total_grit'])
             if 'avg_flow' in segment:
-                ET.SubElement(trk_seg, f"{tag.asx}flow").text = str(segment['avg_flow'])
+                ET.SubElement(trk_seg, f"{tag.asx}flow").text = self._to_text(segment['avg_flow'])
 
         return trk_asx
 
@@ -355,11 +378,11 @@ class GpxWriter(Writer):
             return None
 
         trkpt = ET.SubElement(trkseg, f"{tag.gpx}trkpt",
-                              lat=str(data['lat']),
-                              lon=str(data['lon']))
+                              lat=self._to_text(data['lat']),
+                              lon=self._to_text(data['lon']))
         
         if 'ele' in data:
-            ET.SubElement(trkpt, f"{tag.gpx}ele").text = str(data['ele'])
+            ET.SubElement(trkpt, f"{tag.gpx}ele").text = self._to_text(data['ele'])
 
         ET.SubElement(trkpt, f"{tag.gpx}time").text = to_string(timestamp)
 
@@ -368,110 +391,110 @@ class GpxWriter(Writer):
         trkpt_tpx = ET.SubElement(trkpt_ext, f"{tag.tpx}TrackPointExtension")
 
         if 'atemp' in data:
-            ET.SubElement(trkpt_tpx, f"{tag.tpx}atemp").text = str(data['atemp'])
+            ET.SubElement(trkpt_tpx, f"{tag.tpx}atemp").text = self._to_text(data['atemp'])
         if 'hr' in data:
             val = data['hr']
             if isinstance(val, float):
                 val = round(val)
-            ET.SubElement(trkpt_tpx, f"{tag.tpx}hr").text = str(val)
+            ET.SubElement(trkpt_tpx, f"{tag.tpx}hr").text = self._to_text(val)
         if 'cad' in data:
-            ET.SubElement(trkpt_tpx, f"{tag.tpx}cad").text = str(data['cad'])
+            ET.SubElement(trkpt_tpx, f"{tag.tpx}cad").text = self._to_text(data['cad'])
         if 'speed' in data:
-            ET.SubElement(trkpt_tpx, f"{tag.tpx}speed").text = str(data['speed'])
+            ET.SubElement(trkpt_tpx, f"{tag.tpx}speed").text = self._to_text(data['speed'])
 
         trkpt_adx = ET.SubElement(trkpt_ext, f"{tag.adx}ActivityTrackPointExtension")
 
         if 'timer' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}timer").text = str(data['timer'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}timer").text = self._to_text(data['timer'])
         if 'smoothele' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}smoothele").text = str(data['smoothele'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}smoothele").text = self._to_text(data['smoothele'])
         if 'dist' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}dist").text = str(data['dist'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}dist").text = self._to_text(data['dist'])
         if 'kcal' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}kcal").text = str(data['kcal'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}kcal").text = self._to_text(data['kcal'])
 
         if 'rr' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}rr").text = str(data['rr'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}rr").text = self._to_text(data['rr'])
         if 'ctemp' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}ctemp").text = str(data['ctemp'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}ctemp").text = self._to_text(data['ctemp'])
 
         if 'power' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}power").text = str(data['power'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}power").text = self._to_text(data['power'])
         if 'power3s' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}power3s").text = str(data['power3s'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}power3s").text = self._to_text(data['power3s'])
         if 'power10s' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}power10s").text = str(data['power10s'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}power10s").text = self._to_text(data['power10s'])
         if 'power30s' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}power30s").text = str(data['power30s'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}power30s").text = self._to_text(data['power30s'])
         if 'accpower' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}accpower").text = str(data['accpower'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}accpower").text = self._to_text(data['accpower'])
 
         if 'grade' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}grade").text = str(data['grade'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}grade").text = self._to_text(data['grade'])
         if 'asc' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}asc").text = str(data['asc'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}asc").text = self._to_text(data['asc'])
         if 'desc' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}desc").text = str(data['desc'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}desc").text = self._to_text(data['desc'])
         if 'vspeed' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}vspeed").text = str(data['vspeed'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}vspeed").text = self._to_text(data['vspeed'])
 
         if 'ltrqeff' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}ltrqeff").text = str(data['ltrqeff'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}ltrqeff").text = self._to_text(data['ltrqeff'])
         if 'rtrqeff' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}rtrqeff").text = str(data['rtrqeff'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}rtrqeff").text = self._to_text(data['rtrqeff'])
         if 'lpdlsmooth' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}lpdlsmooth").text = str(data['lpdlsmooth'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}lpdlsmooth").text = self._to_text(data['lpdlsmooth'])
         if 'rpdlsmooth' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}rpdlsmooth").text = str(data['rpdlsmooth'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}rpdlsmooth").text = self._to_text(data['rpdlsmooth'])
         if 'cpdlsmooth' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}cpdlsmooth").text = str(data['cpdlsmooth'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}cpdlsmooth").text = self._to_text(data['cpdlsmooth'])
 
         if 'grit' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}grit").text = str(data['grit'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}grit").text = self._to_text(data['grit'])
         if 'flow' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}flow").text = str(data['flow'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}flow").text = self._to_text(data['flow'])
 
         if 'climb' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}climb").text = str(data['climb'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}climb").text = self._to_text(data['climb'])
 
         if 'fgearnum' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}fgearnum").text = str(data['fgearnum'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}fgearnum").text = self._to_text(data['fgearnum'])
         if 'fgear' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}fgear").text = str(data['fgear'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}fgear").text = self._to_text(data['fgear'])
         if 'rgearnum' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}rgearnum").text = str(data['rgearnum'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}rgearnum").text = self._to_text(data['rgearnum'])
         if 'rgear' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}rgear").text = str(data['rgear'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}rgear").text = self._to_text(data['rgear'])
 
         if 'jumpdist' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}jumpdist").text = str(data['jumpdist'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}jumpdist").text = self._to_text(data['jumpdist'])
         if 'jumpheight' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}jumpheight").text = str(data['jumpheight'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}jumpheight").text = self._to_text(data['jumpheight'])
         if 'jumptime' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}jumptime").text = str(data['jumptime'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}jumptime").text = self._to_text(data['jumptime'])
         if 'jumpscore' in data:
-            ET.SubElement(trkpt_adx, f"{tag.adx}jumpscore").text = str(data['jumpscore'])
+            ET.SubElement(trkpt_adx, f"{tag.adx}jumpscore").text = self._to_text(data['jumpscore'])
 
         if any(k in data for k in ('rtx_lap', 'rtx_state', 'rtx_lap_distance', 'rtx_delta_to_best_lap', 'rtx_delta_to_best_so_far')):
             # TODO check by rtx_ prefix?
             trkpt_rtx = ET.SubElement(trkpt_ext, f"{tag.rtx}RaceTrackExtension")
 
             if 'rtx_lap' in data:
-                ET.SubElement(trkpt_rtx, f"{tag.rtx}rtx_lap").text = str(data['rtx_lap'])
+                ET.SubElement(trkpt_rtx, f"{tag.rtx}rtx_lap").text = self._to_text(data['rtx_lap'])
             if 'rtx_state' in data:
-                ET.SubElement(trkpt_rtx, f"{tag.rtx}rtx_state").text = str(data['rtx_state'])
+                ET.SubElement(trkpt_rtx, f"{tag.rtx}rtx_state").text = self._to_text(data['rtx_state'])
             if 'rtx_lap_distance' in data:
-                ET.SubElement(trkpt_rtx, f"{tag.rtx}rtx_lap_distance").text = str(data['rtx_lap_distance'])
+                ET.SubElement(trkpt_rtx, f"{tag.rtx}rtx_lap_distance").text = self._to_text(data['rtx_lap_distance'])
             if 'rtx_delta_to_best_lap' in data:
-                ET.SubElement(trkpt_rtx, f"{tag.rtx}rtx_delta_to_best_lap").text = str(data['rtx_delta_to_best_lap'])
+                ET.SubElement(trkpt_rtx, f"{tag.rtx}rtx_delta_to_best_lap").text = self._to_text(data['rtx_delta_to_best_lap'])
             if 'rtx_delta_to_best_so_far' in data:
-                ET.SubElement(trkpt_rtx, f"{tag.rtx}rtx_delta_to_best_so_far").text = str(data['rtx_delta_to_best_so_far'])
+                ET.SubElement(trkpt_rtx, f"{tag.rtx}rtx_delta_to_best_so_far").text = self._to_text(data['rtx_delta_to_best_so_far'])
 
         if len(track.custom_fields):
             trkpt_gpst = ET.SubElement(trkpt_ext, f"{tag.gpst}CustomDataExtension")
             for key in track.custom_fields:
                 if key in data:
-                    ET.SubElement(trkpt_gpst, f"{tag.gpst}{key}").text = str(data[key])
+                    ET.SubElement(trkpt_gpst, f"{tag.gpst}{key}").text = self._to_text(data[key])
 
         return trkpt
 
