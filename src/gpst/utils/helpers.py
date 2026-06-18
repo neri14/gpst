@@ -46,7 +46,6 @@ def geo_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return dist
 
 
-#FIXME verify implementation find_closest_point_on_line
 def find_closest_point_on_line(lat: float, lon: float, line_start: tuple[float, float], line_end: tuple[float, float]) -> tuple[float, float]:
     # This function finds the closest point on the line defined by line_start and line_end to the point (lat, lon)
     # It uses a projection of the point onto the line segment and checks if the projection falls within the segment
@@ -90,7 +89,6 @@ def find_closest_point_on_line(lat: float, lon: float, line_start: tuple[float, 
     return closest_point_latlon
 
 
-#FIXME verify implementation lines_intersect
 def lines_intersect(lat1: float, lon1: float, lat2: float, lon2: float, lat3: float, lon3: float, lat4: float, lon4: float) -> bool:
     # This function checks if the line segment from (lat1, lon1) to (lat2, lon2) intersects with the line segment from (lat3, lon3) to (lat4, lon4)
     # For small local areas (< 100km), uses planar approximation which is simpler and more reliable than great-circle math

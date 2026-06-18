@@ -30,10 +30,14 @@ class Gate:
 
 
 class Racetrack:
-    def __init__(self):
+    def __init__(self, gate_debounce_distance_m: float = 30.0):
         self.gates: list[Gate] = []
         self.track_points: list[Point] = []
 
+        if gate_debounce_distance_m < 0.0:
+            raise ValueError("Gate debounce distance must be non-negative.")
+
+        self.gate_debounce_distance_m = gate_debounce_distance_m
         self._last_point: Point | None = None
 
 
@@ -72,14 +76,6 @@ class Racetrack:
         self.debug()
 
 
-    #FIXME refer to errrors.png
-    #FIXME distance along track gets thrown off when passing finish line (between last and first point it's half the track length)
-    #FIXME there are strange jumps at the end of the track to max dist
-    #FIXME there are generally strange jumps every now and then
-
-
-
-    #FIXME verify implementation calculate_racetrack_data
     def calculate_racetrack_data(self, track: Track):
 
         class State(StrEnum):
@@ -97,20 +93,36 @@ class Racetrack:
 
         last_ts = None
         last_tp = None
-
-        # TODO debouncing gates so that gate crossing is not duplicated for noisy data
-        # TODO minisector handling in ascending order so that if distance along track is decreasing we don't count back
+        distance_since_last_gate_crossing: dict[GateType, float] = {
+            gate_type: float("inf") for gate_type in GateType
+        }
 
         for ts, tp in track.points_iter:
             if 'lat' not in tp or 'lon' not in tp:
                 continue
 
             if last_tp is not None:
+                segment_distance = geo_distance(last_tp[0], last_tp[1], tp['lat'], tp['lon'])
+                for gate_type in distance_since_last_gate_crossing:
+                    distance_since_last_gate_crossing[gate_type] += segment_distance
+
                 gates_crossed = self._detect_gates_crossed(last_tp[0], last_tp[1], tp['lat'], tp['lon'])
                 if gates_crossed:
                     logger.debug(f"Gates crossed between {last_tp} and {(tp['lat'], tp['lon'])}: {[g.type for g in gates_crossed]}")
 
                 for gate in gates_crossed:
+                    if (
+                        self.gate_debounce_distance_m > 0.0
+                        and distance_since_last_gate_crossing[gate.type] < self.gate_debounce_distance_m
+                    ):
+                        logger.debug(
+                            f"Ignoring debounced gate crossing for {gate.type}: "
+                            f"distance {distance_since_last_gate_crossing[gate.type]:.2f}m "
+                            f"< {self.gate_debounce_distance_m:.2f}m."
+                        )
+                        continue
+
+                    distance_since_last_gate_crossing[gate.type] = 0.0
                     gate_ts = self._interpolate_gate_crossing_time(last_tp, last_ts, (tp['lat'], tp['lon']), ts, gate)
 
                     if gate.type == GateType.PIT_EXIT:
@@ -150,10 +162,7 @@ class Racetrack:
                 if state == State.ON_TRACK:
                     tp['rt_lap_distance'] = self._calculate_distance_along_track((tp['lat'], tp['lon']))
 
-                # TODO store lap time metadata and all needed data in track metadata
                 # TODO store delta to best lap time, delta to best lap time so far in track point metadata
-
-                # TODO minisectors if needed?
 
 
             tp['rt_lap'] = lap
@@ -184,7 +193,6 @@ class Racetrack:
         return crossed_gates
 
 
-    #FIXME verify implementation _interpolate_gate_crossing_time
     def _interpolate_gate_crossing_time(self, p1: tuple[float, float], t1, p2: tuple[float, float], t2, gate: Gate):
            # Interpolate the time of crossing the gate based on the positions and timestamps of the two track points
            # Linear interpolation based on distance along the track segment
@@ -200,7 +208,6 @@ class Racetrack:
            interpolated_time = t1 + (t2 - t1) * proportion
            return interpolated_time
 
-    #FIXME verify implementation _calculate_distance_along_track
     def _calculate_distance_along_track(self, point: tuple[float, float]) -> float:
         if len(self.track_points) < 2:
             return 0.0
@@ -262,9 +269,7 @@ class Racetrack:
         for point in self.track_points:
             logger.debug(f"RACETRACK {point.distance:.2f}m: Track Point: {point.point}")
 
-#FIXME verify implementation load_racetrack
 def load_racetrack(racetrack_path) -> Racetrack:
-    #TODO minisector distance? count? definition in track file
     rt = Racetrack()
 
     valid_sections = {
