@@ -528,10 +528,14 @@ class RtxV1Parser(BaseParser):
                     data['rtx_state'] = text
                 case "rtx_lap_distance":
                     data['rtx_lap_distance'] = float(text)
-                case "rtx_delta_to_best_lap":
-                    data['rtx_delta_to_best_lap'] = float(text)
-                case "rtx_delta_to_best_so_far":
-                    data['rtx_delta_to_best_so_far'] = float(text)
+                case "rtx_overall_best_lap_delta":
+                    data['rtx_overall_best_lap_delta'] = float(text)
+                case "rtx_overall_best_lap":
+                    data['rtx_overall_best_lap'] = float(text)
+                case "rtx_best_lap_delta":
+                    data['rtx_best_lap_delta'] = float(text)
+                case "rtx_best_lap":
+                    data['rtx_best_lap'] = float(text)
                 case _:
                     logger.debug(f"Ignored RTX V1 field tag: \"{tag}\"")
 

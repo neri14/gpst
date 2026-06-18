@@ -297,7 +297,8 @@ class Racetrack:
                     point_lap_distance,
                 )
                 if best_lap_time_at_distance is not None:
-                    point_data['rtx_delta_to_best_lap'] = point_elapsed - best_lap_time_at_distance
+                    point_data['rtx_overall_best_lap_delta'] = point_elapsed - best_lap_time_at_distance
+                    point_data['rtx_overall_best_lap'] = lap_total_times[best_lap]
 
                 best_so_far_candidates = [
                     lap_idx for lap_idx in lap_total_times.keys() if lap_idx < point_lap
@@ -312,7 +313,8 @@ class Racetrack:
                     point_lap_distance,
                 )
                 if best_so_far_time_at_distance is not None:
-                    point_data['rtx_delta_to_best_so_far'] = point_elapsed - best_so_far_time_at_distance
+                    point_data['rtx_best_lap_delta'] = point_elapsed - best_so_far_time_at_distance
+                    point_data['rtx_best_lap'] = lap_total_times[best_so_far_lap]
 
         return track
 

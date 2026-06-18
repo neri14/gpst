@@ -21,8 +21,10 @@
       <xsd:element name="rtx_lap" type="Integer_t" minOccurs="0" />
       <xsd:element name="rtx_state" type="xsd:string" minOccurs="0" />
       <xsd:element name="rtx_lap_distance" type="Meters_t" minOccurs="0" />
-      <xsd:element name="rtx_delta_to_best_lap" type="Seconds_t" minOccurs="0" />
-      <xsd:element name="rtx_delta_to_best_so_far" type="Seconds_t" minOccurs="0" />
+      <xsd:element name="rtx_overall_best_lap_delta" type="Seconds_t" minOccurs="0" />
+      <xsd:element name="rtx_overall_best_lap" type="Seconds_t" minOccurs="0" />
+      <xsd:element name="rtx_best_lap_delta" type="Seconds_t" minOccurs="0" />
+      <xsd:element name="rtx_best_lap" type="Seconds_t" minOccurs="0" />
     </xsd:sequence>
   </xsd:complexType>
 

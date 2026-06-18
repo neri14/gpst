@@ -108,8 +108,10 @@ def test_gpx_roundtrip_preserves_racetrack_delta_fields(tmp_path):
         "rtx_lap": 2,
         "rtx_state": "on_track",
         "rtx_lap_distance": 100.0,
-        "rtx_delta_to_best_lap": 0.25,
-        "rtx_delta_to_best_so_far": -0.1,
+        "rtx_overall_best_lap_delta": 0.25,
+        "rtx_overall_best_lap": 42.1,
+        "rtx_best_lap_delta": -0.1,
+        "rtx_best_lap": 42.5,
     })
     track.upsert_point(t1, {
         "time": t1,
@@ -118,8 +120,10 @@ def test_gpx_roundtrip_preserves_racetrack_delta_fields(tmp_path):
         "rtx_lap": 2,
         "rtx_state": "on_track",
         "rtx_lap_distance": 120.0,
-        "rtx_delta_to_best_lap": 0.3,
-        "rtx_delta_to_best_so_far": -0.05,
+        "rtx_overall_best_lap_delta": 0.3,
+        "rtx_overall_best_lap": 42.1,
+        "rtx_best_lap_delta": -0.05,
+        "rtx_best_lap": 42.5,
     })
 
     out_path = tmp_path / "racetrack_deltas_roundtrip.gpx"
@@ -128,8 +132,10 @@ def test_gpx_roundtrip_preserves_racetrack_delta_fields(tmp_path):
     assert writer.write(track, out_path)
 
     xml = out_path.read_text(encoding="utf-8")
-    assert "<rtx:rtx_delta_to_best_lap>" in xml
-    assert "<rtx:rtx_delta_to_best_so_far>" in xml
+    assert "<rtx:rtx_overall_best_lap_delta>" in xml
+    assert "<rtx:rtx_overall_best_lap>" in xml
+    assert "<rtx:rtx_best_lap_delta>" in xml
+    assert "<rtx:rtx_best_lap>" in xml
 
     reader = GpxReader()
     parsed = reader.read(out_path)
@@ -138,7 +144,11 @@ def test_gpx_roundtrip_preserves_racetrack_delta_fields(tmp_path):
     parsed_points = [point for _, point in parsed.points_iter]
     assert len(parsed_points) == 2
 
-    assert parsed_points[0]["rtx_delta_to_best_lap"] == 0.25
-    assert parsed_points[0]["rtx_delta_to_best_so_far"] == -0.1
-    assert parsed_points[1]["rtx_delta_to_best_lap"] == 0.3
-    assert parsed_points[1]["rtx_delta_to_best_so_far"] == -0.05
+    assert parsed_points[0]["rtx_overall_best_lap_delta"] == 0.25
+    assert parsed_points[0]["rtx_overall_best_lap"] == 42.1
+    assert parsed_points[0]["rtx_best_lap_delta"] == -0.1
+    assert parsed_points[0]["rtx_best_lap"] == 42.5
+    assert parsed_points[1]["rtx_overall_best_lap_delta"] == 0.3
+    assert parsed_points[1]["rtx_overall_best_lap"] == 42.1
+    assert parsed_points[1]["rtx_best_lap_delta"] == -0.05
+    assert parsed_points[1]["rtx_best_lap"] == 42.5

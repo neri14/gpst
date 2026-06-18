@@ -195,12 +195,18 @@ def test_lap_deltas_are_added_after_first_completed_lap():
     lap2_points = [point for point in points if point.get("rtx_lap") == 2]
     lap3_points = [point for point in points if point.get("rtx_lap") == 3]
 
-    assert any("rtx_delta_to_best_lap" in point for point in lap1_points)
-    assert all("rtx_delta_to_best_so_far" not in point for point in lap1_points)
-    assert any("rtx_delta_to_best_lap" in point for point in lap2_points)
-    assert any("rtx_delta_to_best_so_far" in point for point in lap2_points)
-    assert any("rtx_delta_to_best_lap" in point for point in lap3_points)
-    assert any("rtx_delta_to_best_so_far" in point for point in lap3_points)
+    assert any("rtx_overall_best_lap_delta" in point for point in lap1_points)
+    assert any("rtx_overall_best_lap" in point for point in lap1_points)
+    assert all("rtx_best_lap_delta" not in point for point in lap1_points)
+    assert all("rtx_best_lap" not in point for point in lap1_points)
+    assert any("rtx_overall_best_lap_delta" in point for point in lap2_points)
+    assert any("rtx_overall_best_lap" in point for point in lap2_points)
+    assert any("rtx_best_lap_delta" in point for point in lap2_points)
+    assert any("rtx_best_lap" in point for point in lap2_points)
+    assert any("rtx_overall_best_lap_delta" in point for point in lap3_points)
+    assert any("rtx_overall_best_lap" in point for point in lap3_points)
+    assert any("rtx_best_lap_delta" in point for point in lap3_points)
+    assert any("rtx_best_lap" in point for point in lap3_points)
 
 
 def test_lap_distance_resets_on_same_sample_where_lap_increments():

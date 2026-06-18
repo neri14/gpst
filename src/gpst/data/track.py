@@ -102,8 +102,10 @@ point_fields = {
     'rtx_lap':                          lap_t,
     'rtx_state':                        lap_state_t,
     'rtx_lap_distance':                 distance_t,
-    'rtx_delta_to_best_lap':            time_delta_t,
-    'rtx_delta_to_best_so_far':         time_delta_t,
+    'rtx_overall_best_lap_delta':       time_delta_t,
+    'rtx_overall_best_lap':             time_t,
+    'rtx_best_lap_delta':               time_delta_t,
+    'rtx_best_lap':                     time_t,
 }
 
 metadata_fields = {
