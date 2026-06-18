@@ -21,6 +21,8 @@
       <xsd:element name="rtx_lap" type="Integer_t" minOccurs="0" />
       <xsd:element name="rtx_state" type="xsd:string" minOccurs="0" />
       <xsd:element name="rtx_lap_distance" type="Meters_t" minOccurs="0" />
+      <xsd:element name="rtx_delta_to_best_lap" type="Seconds_t" minOccurs="0" />
+      <xsd:element name="rtx_delta_to_best_so_far" type="Seconds_t" minOccurs="0" />
     </xsd:sequence>
   </xsd:complexType>
 
@@ -34,6 +36,14 @@
   <xsd:simpleType name="Meters_t">
     <xsd:annotation><xsd:documentation>
       This type contains a distance value measured in meters.
+    </xsd:documentation></xsd:annotation>
+    <xsd:restriction base="xsd:double"/>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="Seconds_t">
+    <xsd:annotation><xsd:documentation>
+      This type contains a time delta value measured in seconds.
+      Positive means behind reference, negative means ahead of reference.
     </xsd:documentation></xsd:annotation>
     <xsd:restriction base="xsd:double"/>
   </xsd:simpleType>

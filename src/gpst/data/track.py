@@ -42,6 +42,9 @@ timestamp_t         = Type('timestamp',        datetime,     None,              
 time_t              = Type('time',             float,        'seconds',                 's',      0,        None)
 vertical_speed_t    = Type('vertical speed',   float,        'meters per second',       'm/s',    None,     None)
 work_t              = Type('work',             int,          'joules',                  'J',      0,        None)
+lap_t               = Type('lap',              int,          'lap index',               None,     0,        None)
+lap_state_t         = Type('lap state',        str,          None,                      None,     None,     None)
+time_delta_t        = Type('time delta',        float,        'seconds',                 's',      None,     None)
 
 int_t               = Type('int',              int,          None,                      None,     None,     None)
 float_t             = Type('float',            float,        None,                      None,     None,     None)
@@ -96,6 +99,11 @@ point_fields = {
     'jumprotations':                    int_t,
     'jumptime':                         time_t,
     'jumpscore':                        float_t,
+    'rtx_lap':                          lap_t,
+    'rtx_state':                        lap_state_t,
+    'rtx_lap_distance':                 distance_t,
+    'rtx_delta_to_best_lap':            time_delta_t,
+    'rtx_delta_to_best_so_far':         time_delta_t,
 }
 
 metadata_fields = {

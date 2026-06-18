@@ -93,3 +93,52 @@ def test_gpx_roundtrip_preserves_lap_and_pitstop_segments(tmp_path):
     assert pit["name"] == "Pit stop 1"
     assert pit["total_elapsed_time"] == 15.0
     assert pit["total_distance"] == 20.0
+
+
+def test_gpx_roundtrip_preserves_racetrack_delta_fields(tmp_path):
+    track = Track()
+
+    t0 = datetime(2026, 1, 1, 12, 0, 0)
+    t1 = t0 + timedelta(seconds=1)
+
+    track.upsert_point(t0, {
+        "time": t0,
+        "lat": 50.0,
+        "lon": 16.0,
+        "rtx_lap": 2,
+        "rtx_state": "on_track",
+        "rtx_lap_distance": 100.0,
+        "rtx_delta_to_best_lap": 0.25,
+        "rtx_delta_to_best_so_far": -0.1,
+    })
+    track.upsert_point(t1, {
+        "time": t1,
+        "lat": 50.0001,
+        "lon": 16.0001,
+        "rtx_lap": 2,
+        "rtx_state": "on_track",
+        "rtx_lap_distance": 120.0,
+        "rtx_delta_to_best_lap": 0.3,
+        "rtx_delta_to_best_so_far": -0.05,
+    })
+
+    out_path = tmp_path / "racetrack_deltas_roundtrip.gpx"
+
+    writer = GpxWriter()
+    assert writer.write(track, out_path)
+
+    xml = out_path.read_text(encoding="utf-8")
+    assert "<rtx:rtx_delta_to_best_lap>" in xml
+    assert "<rtx:rtx_delta_to_best_so_far>" in xml
+
+    reader = GpxReader()
+    parsed = reader.read(out_path)
+
+    assert parsed is not None
+    parsed_points = [point for _, point in parsed.points_iter]
+    assert len(parsed_points) == 2
+
+    assert parsed_points[0]["rtx_delta_to_best_lap"] == 0.25
+    assert parsed_points[0]["rtx_delta_to_best_so_far"] == -0.1
+    assert parsed_points[1]["rtx_delta_to_best_lap"] == 0.3
+    assert parsed_points[1]["rtx_delta_to_best_so_far"] == -0.05

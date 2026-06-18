@@ -452,16 +452,20 @@ class GpxWriter(Writer):
         if 'jumpscore' in data:
             ET.SubElement(trkpt_adx, f"{tag.adx}jumpscore").text = str(data['jumpscore'])
 
-        if any(k in data for k in ('rt_lap', 'rt_state', 'rt_lap_distance')):
-            # TODO check by rt_ prefix?
+        if any(k in data for k in ('rtx_lap', 'rtx_state', 'rtx_lap_distance', 'rtx_delta_to_best_lap', 'rtx_delta_to_best_so_far')):
+            # TODO check by rtx_ prefix?
             trkpt_rtx = ET.SubElement(trkpt_ext, f"{tag.rtx}RaceTrackExtension")
 
-            if 'rt_lap' in data:
-                ET.SubElement(trkpt_rtx, f"{tag.rtx}rtx_lap").text = str(data['rt_lap'])
-            if 'rt_state' in data:
-                ET.SubElement(trkpt_rtx, f"{tag.rtx}rtx_state").text = str(data['rt_state'])
-            if 'rt_lap_distance' in data:
-                ET.SubElement(trkpt_rtx, f"{tag.rtx}rtx_lap_distance").text = str(data['rt_lap_distance'])
+            if 'rtx_lap' in data:
+                ET.SubElement(trkpt_rtx, f"{tag.rtx}rtx_lap").text = str(data['rtx_lap'])
+            if 'rtx_state' in data:
+                ET.SubElement(trkpt_rtx, f"{tag.rtx}rtx_state").text = str(data['rtx_state'])
+            if 'rtx_lap_distance' in data:
+                ET.SubElement(trkpt_rtx, f"{tag.rtx}rtx_lap_distance").text = str(data['rtx_lap_distance'])
+            if 'rtx_delta_to_best_lap' in data:
+                ET.SubElement(trkpt_rtx, f"{tag.rtx}rtx_delta_to_best_lap").text = str(data['rtx_delta_to_best_lap'])
+            if 'rtx_delta_to_best_so_far' in data:
+                ET.SubElement(trkpt_rtx, f"{tag.rtx}rtx_delta_to_best_so_far").text = str(data['rtx_delta_to_best_so_far'])
 
         if len(track.custom_fields):
             trkpt_gpst = ET.SubElement(trkpt_ext, f"{tag.gpst}CustomDataExtension")

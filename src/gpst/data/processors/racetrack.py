@@ -1,4 +1,5 @@
 
+from collections import defaultdict
 from dataclasses import dataclass
 from enum import StrEnum
 import math
@@ -95,6 +96,9 @@ class Racetrack:
         pit_entry_distance: float | None = None
 
         lap_times = []
+        lap_total_times: dict[int, float] = {}
+        lap_progress_samples: dict[int, list[tuple[float, float]]] = defaultdict(list)
+        lap_points_for_delta: list[tuple[int, float, float, dict]] = []
         pit_times = []
 
         last_ts = None
@@ -110,6 +114,7 @@ class Racetrack:
 
             if last_tp is not None:
                 segment_distance = geo_distance(last_tp[0], last_tp[1], tp['lat'], tp['lon'])
+                finish_crossing_proportion_for_point: float | None = None
                 for gate_type in distance_since_last_gate_crossing:
                     distance_since_last_gate_crossing[gate_type] += segment_distance
 
@@ -117,7 +122,14 @@ class Racetrack:
                 if gates_crossed:
                     logger.debug(f"Gates crossed between {last_tp} and {(tp['lat'], tp['lon'])}: {[g.type for g in gates_crossed]}")
 
-                for gate in gates_crossed:
+                # Process gates in the order they are crossed along the current segment.
+                gates_crossed_with_proportion = [
+                    (gate, self._gate_crossing_proportion(last_tp, (tp['lat'], tp['lon']), gate))
+                    for gate in gates_crossed
+                ]
+                gates_crossed_with_proportion.sort(key=lambda item: item[1])
+
+                for gate, crossing_proportion in gates_crossed_with_proportion:
                     if (
                         self.gate_debounce_distance_m > 0.0
                         and distance_since_last_gate_crossing[gate.type] < self.gate_debounce_distance_m
@@ -130,15 +142,24 @@ class Racetrack:
                         continue
 
                     distance_since_last_gate_crossing[gate.type] = 0.0
-                    gate_ts = self._interpolate_gate_crossing_time(last_tp, last_ts, (tp['lat'], tp['lon']), ts, gate)
+                    gate_ts = self._interpolate_gate_crossing_time(
+                        last_tp,
+                        last_ts,
+                        (tp['lat'], tp['lon']),
+                        ts,
+                        gate,
+                        crossing_proportion,
+                    )
                     gate_timer = self._interpolate_gate_crossing_metric(last_tp, (tp['lat'], tp['lon']),
                                                                         self._extract_numeric(last_point_data, 'timer'),
                                                                         self._extract_numeric(tp, 'timer'),
-                                                                        gate)
+                                                                        gate,
+                                                                        crossing_proportion)
                     gate_distance = self._interpolate_gate_crossing_metric(last_tp, (tp['lat'], tp['lon']),
                                                                            self._extract_numeric(last_point_data, 'dist'),
                                                                            self._extract_numeric(tp, 'dist'),
-                                                                           gate)
+                                                                           gate,
+                                                                           crossing_proportion)
 
                     if gate.type == GateType.PIT_EXIT:
                         state = State.ON_TRACK
@@ -198,6 +219,7 @@ class Racetrack:
                         if lap_start_time is not None:
                             lap_time = (gate_ts - lap_start_time).total_seconds()
                             lap_times.append(lap_time)
+                            lap_total_times[lap] = lap_time
                             logger.info(f"Lap {lap} completed in {lap_time:.3f}s.")
 
                             lap_segment = {
@@ -223,6 +245,7 @@ class Racetrack:
                                     lap_segment['total_distance'] = lap_distance
                                     if lap_time > 0.0:
                                         lap_segment['avg_speed'] = lap_distance / lap_time
+                                    lap_progress_samples[lap].append((lap_distance, lap_time))
 
                             track.add_segment(lap_segment)
                         
@@ -230,21 +253,66 @@ class Racetrack:
                             lap_start_time = gate_ts #start new lap time when crossing finish line on track
                             lap_start_timer = gate_timer
                             lap_start_distance = gate_distance
+                            finish_crossing_proportion_for_point = crossing_proportion
 
                         lap += 1
 
+                        if state == State.ON_TRACK:
+                            lap_progress_samples[lap].append((0.0, 0.0))
+
                 if state == State.ON_TRACK:
-                    tp['rt_lap_distance'] = self._calculate_distance_along_track((tp['lat'], tp['lon']))
+                    if finish_crossing_proportion_for_point is not None:
+                        # Keep lap/distance consistent on the exact sample where lap increments.
+                        tp['rtx_lap_distance'] = segment_distance * (1.0 - finish_crossing_proportion_for_point)
+                    else:
+                        tp['rtx_lap_distance'] = self._calculate_distance_along_track((tp['lat'], tp['lon']))
 
-                # TODO store delta to best lap time, delta to best lap time so far in track point metadata
+                if (
+                    state == State.ON_TRACK
+                    and lap > 0
+                    and lap_start_time is not None
+                    and isinstance(tp.get('rtx_lap_distance'), (int, float))
+                ):
+                    lap_distance = float(tp['rtx_lap_distance'])
+                    elapsed_in_lap = (ts - lap_start_time).total_seconds()
+                    if elapsed_in_lap >= 0.0:
+                        lap_progress_samples[lap].append((lap_distance, elapsed_in_lap))
+                        lap_points_for_delta.append((lap, lap_distance, elapsed_in_lap, tp))
 
 
-            tp['rt_lap'] = lap
-            tp['rt_state'] = state.value
+            tp['rtx_lap'] = lap
+            tp['rtx_state'] = state.value
 
             last_ts = ts
             last_tp = (tp['lat'], tp['lon'])
             last_point_data = tp
+
+        if lap_total_times:
+            best_lap = min(lap_total_times, key=lap_total_times.get)
+
+            for point_lap, point_lap_distance, point_elapsed, point_data in lap_points_for_delta:
+                best_lap_time_at_distance = self._interpolate_lap_time_at_distance(
+                    lap_progress_samples,
+                    best_lap,
+                    point_lap_distance,
+                )
+                if best_lap_time_at_distance is not None:
+                    point_data['rtx_delta_to_best_lap'] = point_elapsed - best_lap_time_at_distance
+
+                best_so_far_candidates = [
+                    lap_idx for lap_idx in lap_total_times.keys() if lap_idx < point_lap
+                ]
+                if not best_so_far_candidates:
+                    continue
+
+                best_so_far_lap = min(best_so_far_candidates, key=lambda lap_idx: lap_total_times[lap_idx])
+                best_so_far_time_at_distance = self._interpolate_lap_time_at_distance(
+                    lap_progress_samples,
+                    best_so_far_lap,
+                    point_lap_distance,
+                )
+                if best_so_far_time_at_distance is not None:
+                    point_data['rtx_delta_to_best_so_far'] = point_elapsed - best_so_far_time_at_distance
 
         return track
 
@@ -268,24 +336,62 @@ class Racetrack:
         return crossed_gates
 
 
-    def _interpolate_gate_crossing_time(self, p1: tuple[float, float], t1, p2: tuple[float, float], t2, gate: Gate):
-           # Interpolate the time of crossing the gate based on the positions and timestamps of the two track points
-           # Linear interpolation based on distance along the track segment
-           proportion = self._gate_crossing_proportion(p1, p2, gate)
-           interpolated_time = t1 + (t2 - t1) * proportion
-           return interpolated_time
+    def _interpolate_gate_crossing_time(self,
+                                        p1: tuple[float, float],
+                                        t1,
+                                        p2: tuple[float, float],
+                                        t2,
+                                        gate: Gate,
+                                        crossing_proportion: float | None = None):
+        proportion = crossing_proportion
+        if proportion is None:
+            proportion = self._gate_crossing_proportion(p1, p2, gate)
+
+        return t1 + (t2 - t1) * proportion
 
 
     def _gate_crossing_proportion(self, p1: tuple[float, float], p2: tuple[float, float], gate: Gate) -> float:
+        # Estimate crossing location using local planar line-line intersection.
+        earth_radius = 6372797.5605
+        deg_to_rad = math.pi / 180.0
+
+        def to_local_xy(lat: float, lon: float, ref_lat: float, ref_lon: float) -> tuple[float, float]:
+            x = (lon - ref_lon) * math.cos(ref_lat * deg_to_rad) * earth_radius * deg_to_rad
+            y = (lat - ref_lat) * earth_radius * deg_to_rad
+            return x, y
+
+        ref_lat = (p1[0] + p2[0] + gate.p1[0] + gate.p2[0]) / 4.0
+        ref_lon = (p1[1] + p2[1] + gate.p1[1] + gate.p2[1]) / 4.0
+
+        x1, y1 = to_local_xy(p1[0], p1[1], ref_lat, ref_lon)
+        x2, y2 = to_local_xy(p2[0], p2[1], ref_lat, ref_lon)
+        gx1, gy1 = to_local_xy(gate.p1[0], gate.p1[1], ref_lat, ref_lon)
+        gx2, gy2 = to_local_xy(gate.p2[0], gate.p2[1], ref_lat, ref_lon)
+
+        rx = x2 - x1
+        ry = y2 - y1
+        sx = gx2 - gx1
+        sy = gy2 - gy1
+
+        denom = rx * sy - ry * sx
+        if not math.isclose(denom, 0.0, abs_tol=1e-12):
+            qpx = gx1 - x1
+            qpy = gy1 - y1
+            t = (qpx * sy - qpy * sx) / denom
+            u = (qpx * ry - qpy * rx) / denom
+
+            if 0.0 <= t <= 1.0 and 0.0 <= u <= 1.0:
+                return t
+
+        # Fallback for nearly parallel lines: keep previous heuristic and clamp.
         d1 = geo_distance(p1[0], p1[1], gate.p1[0], gate.p1[1]) + geo_distance(p1[0], p1[1], gate.p2[0], gate.p2[1])
         d2 = geo_distance(p2[0], p2[1], gate.p1[0], gate.p1[1]) + geo_distance(p2[0], p2[1], gate.p2[0], gate.p2[1])
 
         total_distance = d1 + d2
-        if total_distance == 0:
+        if total_distance == 0.0:
             return 0.0
 
-        # Linear interpolation: proportion based on point p1's distance to gate
-        return d1 / total_distance
+        return max(0.0, min(1.0, d1 / total_distance))
 
 
     def _interpolate_gate_crossing_metric(self,
@@ -293,11 +399,15 @@ class Racetrack:
                                           p2: tuple[float, float],
                                           v1: float | None,
                                           v2: float | None,
-                                          gate: Gate) -> float | None:
+                                          gate: Gate,
+                                          crossing_proportion: float | None = None) -> float | None:
         if v1 is None or v2 is None:
             return None
 
-        proportion = self._gate_crossing_proportion(p1, p2, gate)
+        proportion = crossing_proportion
+        if proportion is None:
+            proportion = self._gate_crossing_proportion(p1, p2, gate)
+
         return v1 + (v2 - v1) * proportion
 
 
@@ -308,6 +418,39 @@ class Racetrack:
         value = data.get(key)
         if isinstance(value, (int, float)):
             return float(value)
+        return None
+
+
+    def _interpolate_lap_time_at_distance(self,
+                                          lap_progress_samples: dict[int, list[tuple[float, float]]],
+                                          lap: int,
+                                          lap_distance: float) -> float | None:
+        samples = lap_progress_samples.get(lap)
+        if not samples or len(samples) < 2:
+            return None
+
+        sorted_samples = sorted(samples, key=lambda item: item[0])
+
+        prev_distance, prev_elapsed = sorted_samples[0]
+        if math.isclose(lap_distance, prev_distance, rel_tol=1e-9, abs_tol=1e-6):
+            return prev_elapsed
+
+        for current_distance, current_elapsed in sorted_samples[1:]:
+            if math.isclose(lap_distance, current_distance, rel_tol=1e-9, abs_tol=1e-6):
+                return current_elapsed
+
+            # Skip duplicate or non-increasing distance samples to avoid unstable interpolation.
+            if current_distance <= prev_distance:
+                if current_elapsed < prev_elapsed:
+                    prev_elapsed = current_elapsed
+                continue
+
+            if prev_distance <= lap_distance <= current_distance:
+                ratio = (lap_distance - prev_distance) / (current_distance - prev_distance)
+                return prev_elapsed + (current_elapsed - prev_elapsed) * ratio
+
+            prev_distance, prev_elapsed = current_distance, current_elapsed
+
         return None
 
     def _calculate_distance_along_track(self, point: tuple[float, float]) -> float:
