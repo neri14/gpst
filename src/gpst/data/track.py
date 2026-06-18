@@ -22,6 +22,8 @@ class Type:
 class SegmentType(StrEnum):
     SEGMENT='segment'
     CLIMB='climb'
+    LAP='lap'
+    PITSTOP='pitstop'
 
 cadence_t           = Type('cad',              int,          'revolutions per minute',  'rpm',    0,        None)
 calories_t          = Type('kcal',             float,        'kilocalories',            'kcal',   0,        None)

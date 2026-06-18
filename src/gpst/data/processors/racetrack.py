@@ -7,7 +7,7 @@ from pathlib import Path
 from gpst.utils.logger import logger
 from gpst.utils.helpers import geo_distance, find_closest_point_on_line, lines_intersect
 
-from ..track import Track
+from ..track import SegmentType, Track
 
 @dataclass
 class Point:
@@ -87,12 +87,19 @@ class Racetrack:
         lap = 0
 
         lap_start_time = None
+        lap_start_timer: float | None = None
+        lap_start_distance: float | None = None
+
         pit_entry_time = None
+        pit_entry_timer: float | None = None
+        pit_entry_distance: float | None = None
+
         lap_times = []
         pit_times = []
 
         last_ts = None
         last_tp = None
+        last_point_data: dict | None = None
         distance_since_last_gate_crossing: dict[GateType, float] = {
             gate_type: float("inf") for gate_type in GateType
         }
@@ -124,38 +131,105 @@ class Racetrack:
 
                     distance_since_last_gate_crossing[gate.type] = 0.0
                     gate_ts = self._interpolate_gate_crossing_time(last_tp, last_ts, (tp['lat'], tp['lon']), ts, gate)
+                    gate_timer = self._interpolate_gate_crossing_metric(last_tp, (tp['lat'], tp['lon']),
+                                                                        self._extract_numeric(last_point_data, 'timer'),
+                                                                        self._extract_numeric(tp, 'timer'),
+                                                                        gate)
+                    gate_distance = self._interpolate_gate_crossing_metric(last_tp, (tp['lat'], tp['lon']),
+                                                                           self._extract_numeric(last_point_data, 'dist'),
+                                                                           self._extract_numeric(tp, 'dist'),
+                                                                           gate)
 
                     if gate.type == GateType.PIT_EXIT:
                         state = State.ON_TRACK
 
                         if pit_entry_time is not None:
-                            pit_time = gate_ts - pit_entry_time
+                            pit_time = (gate_ts - pit_entry_time).total_seconds()
                             pit_times.append(pit_time)
-                            logger.info(f"Pit stop completed in {pit_time}.")
+                            logger.info(f"Pit stop completed in {pit_time:.3f}s.")
 
-                            # TODO store pit stop metadata as segment
+                            pit_segment = {
+                                'name': f"Pit stop {len(pit_times)}",
+                                'source': "racetrack",
+                                'type': SegmentType.PITSTOP,
+                                'start_time': pit_entry_time,
+                                'end_time': gate_ts,
+                                'total_elapsed_time': pit_time,
+                            }
+
+                            if pit_entry_timer is not None:
+                                pit_segment['start_timer'] = pit_entry_timer
+                            if gate_timer is not None:
+                                pit_segment['end_timer'] = gate_timer
+                            if pit_entry_distance is not None:
+                                pit_segment['start_distance'] = pit_entry_distance
+                            if gate_distance is not None:
+                                pit_segment['end_distance'] = gate_distance
+                            if pit_entry_distance is not None and gate_distance is not None:
+                                pit_distance = gate_distance - pit_entry_distance
+                                if pit_distance >= 0.0:
+                                    pit_segment['total_distance'] = pit_distance
+
+                            track.add_segment(pit_segment)
 
                         lap_start_time = None #invalidate lap time
+                        lap_start_timer = None
+                        lap_start_distance = None
+
                         pit_entry_time = None #invalidate pit entry time
+                        pit_entry_timer = None
+                        pit_entry_distance = None
 
                     if gate.type == GateType.PIT_ENTRY:
                         state = State.IN_PITLANE
+
                         lap_start_time = None #invalidate lap time
+                        lap_start_timer = None
+                        lap_start_distance = None
+
                         pit_entry_time = gate_ts #store pit entry time
+                        pit_entry_timer = gate_timer
+                        pit_entry_distance = gate_distance
 
                     if gate.type == GateType.FINISH:
                         if state == State.UNKNOWN:
                             state = State.ON_TRACK # only if state was unknown update to on_track
 
                         if lap_start_time is not None:
-                            lap_time = gate_ts - lap_start_time
+                            lap_time = (gate_ts - lap_start_time).total_seconds()
                             lap_times.append(lap_time)
-                            logger.info(f"Lap {lap} completed in {lap_time}.")
+                            logger.info(f"Lap {lap} completed in {lap_time:.3f}s.")
 
-                            # TODO store lap metadata as segment
+                            lap_segment = {
+                                'name': f"Lap {lap}",
+                                'source': "racetrack",
+                                'type': SegmentType.LAP,
+                                'start_time': lap_start_time,
+                                'end_time': gate_ts,
+                                'total_elapsed_time': lap_time,
+                            }
+
+                            if lap_start_timer is not None:
+                                lap_segment['start_timer'] = lap_start_timer
+                            if gate_timer is not None:
+                                lap_segment['end_timer'] = gate_timer
+                            if lap_start_distance is not None:
+                                lap_segment['start_distance'] = lap_start_distance
+                            if gate_distance is not None:
+                                lap_segment['end_distance'] = gate_distance
+                            if lap_start_distance is not None and gate_distance is not None:
+                                lap_distance = gate_distance - lap_start_distance
+                                if lap_distance >= 0.0:
+                                    lap_segment['total_distance'] = lap_distance
+                                    if lap_time > 0.0:
+                                        lap_segment['avg_speed'] = lap_distance / lap_time
+
+                            track.add_segment(lap_segment)
                         
                         if state == State.ON_TRACK:
                             lap_start_time = gate_ts #start new lap time when crossing finish line on track
+                            lap_start_timer = gate_timer
+                            lap_start_distance = gate_distance
 
                         lap += 1
 
@@ -170,6 +244,7 @@ class Racetrack:
 
             last_ts = ts
             last_tp = (tp['lat'], tp['lon'])
+            last_point_data = tp
 
         return track
 
@@ -196,17 +271,44 @@ class Racetrack:
     def _interpolate_gate_crossing_time(self, p1: tuple[float, float], t1, p2: tuple[float, float], t2, gate: Gate):
            # Interpolate the time of crossing the gate based on the positions and timestamps of the two track points
            # Linear interpolation based on distance along the track segment
-           d1 = geo_distance(p1[0], p1[1], gate.p1[0], gate.p1[1]) + geo_distance(p1[0], p1[1], gate.p2[0], gate.p2[1])
-           d2 = geo_distance(p2[0], p2[1], gate.p1[0], gate.p1[1]) + geo_distance(p2[0], p2[1], gate.p2[0], gate.p2[1])
-
-           total_distance = d1 + d2
-           if total_distance == 0:
-               return t1  # If both points are at the same location, return the first timestamp
-
-           # Linear interpolation: proportion based on point p1's distance to gate
-           proportion = d1 / total_distance
+           proportion = self._gate_crossing_proportion(p1, p2, gate)
            interpolated_time = t1 + (t2 - t1) * proportion
            return interpolated_time
+
+
+    def _gate_crossing_proportion(self, p1: tuple[float, float], p2: tuple[float, float], gate: Gate) -> float:
+        d1 = geo_distance(p1[0], p1[1], gate.p1[0], gate.p1[1]) + geo_distance(p1[0], p1[1], gate.p2[0], gate.p2[1])
+        d2 = geo_distance(p2[0], p2[1], gate.p1[0], gate.p1[1]) + geo_distance(p2[0], p2[1], gate.p2[0], gate.p2[1])
+
+        total_distance = d1 + d2
+        if total_distance == 0:
+            return 0.0
+
+        # Linear interpolation: proportion based on point p1's distance to gate
+        return d1 / total_distance
+
+
+    def _interpolate_gate_crossing_metric(self,
+                                          p1: tuple[float, float],
+                                          p2: tuple[float, float],
+                                          v1: float | None,
+                                          v2: float | None,
+                                          gate: Gate) -> float | None:
+        if v1 is None or v2 is None:
+            return None
+
+        proportion = self._gate_crossing_proportion(p1, p2, gate)
+        return v1 + (v2 - v1) * proportion
+
+
+    def _extract_numeric(self, data: dict | None, key: str) -> float | None:
+        if data is None:
+            return None
+
+        value = data.get(key)
+        if isinstance(value, (int, float)):
+            return float(value)
+        return None
 
     def _calculate_distance_along_track(self, point: tuple[float, float]) -> float:
         if len(self.track_points) < 2:
