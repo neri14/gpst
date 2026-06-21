@@ -1,6 +1,7 @@
 
 from collections import defaultdict
 from dataclasses import dataclass
+from datetime import datetime
 from enum import StrEnum
 import math
 from pathlib import Path
@@ -95,36 +96,39 @@ class Racetrack:
         pit_entry_timer: float | None = None
         pit_entry_distance: float | None = None
 
-        lap_times = []
+        lap_times: list[float] = []
         lap_total_times: dict[int, float] = {}
         lap_progress_samples: dict[int, list[tuple[float, float]]] = defaultdict(list)
         lap_points_for_delta: list[tuple[int, float, float, dict]] = []
-        pit_times = []
+        pit_times: list[float] = []
 
-        last_ts = None
-        last_tp = None
+        last_ts: datetime | None = None
+        last_tp: tuple[float, float] | None = None
         last_point_data: dict | None = None
         distance_since_last_gate_crossing: dict[GateType, float] = {
             gate_type: float("inf") for gate_type in GateType
         }
 
         for ts, tp in track.points_iter:
-            if 'lat' not in tp or 'lon' not in tp:
+            current_tp = self._extract_point_coords(tp)
+            if current_tp is None:
                 continue
 
+            lat, lon = current_tp
+
             if last_tp is not None:
-                segment_distance = geo_distance(last_tp[0], last_tp[1], tp['lat'], tp['lon'])
+                segment_distance = geo_distance(last_tp[0], last_tp[1], lat, lon)
                 finish_crossing_proportion_for_point: float | None = None
                 for gate_type in distance_since_last_gate_crossing:
                     distance_since_last_gate_crossing[gate_type] += segment_distance
 
-                gates_crossed = self._detect_gates_crossed(last_tp[0], last_tp[1], tp['lat'], tp['lon'])
+                gates_crossed = self._detect_gates_crossed(last_tp[0], last_tp[1], lat, lon)
                 if gates_crossed:
-                    logger.debug(f"Gates crossed between {last_tp} and {(tp['lat'], tp['lon'])}: {[g.type for g in gates_crossed]}")
+                    logger.debug(f"Gates crossed between {last_tp} and {(lat, lon)}: {[g.type for g in gates_crossed]}")
 
                 # Process gates in the order they are crossed along the current segment.
                 gates_crossed_with_proportion = [
-                    (gate, self._gate_crossing_proportion(last_tp, (tp['lat'], tp['lon']), gate))
+                    (gate, self._gate_crossing_proportion(last_tp, current_tp, gate))
                     for gate in gates_crossed
                 ]
                 gates_crossed_with_proportion.sort(key=lambda item: item[1])
@@ -145,17 +149,17 @@ class Racetrack:
                     gate_ts = self._interpolate_gate_crossing_time(
                         last_tp,
                         last_ts,
-                        (tp['lat'], tp['lon']),
+                        current_tp,
                         ts,
                         gate,
                         crossing_proportion,
                     )
-                    gate_timer = self._interpolate_gate_crossing_metric(last_tp, (tp['lat'], tp['lon']),
+                    gate_timer = self._interpolate_gate_crossing_metric(last_tp, current_tp,
                                                                         self._extract_numeric(last_point_data, 'timer'),
                                                                         self._extract_numeric(tp, 'timer'),
                                                                         gate,
                                                                         crossing_proportion)
-                    gate_distance = self._interpolate_gate_crossing_metric(last_tp, (tp['lat'], tp['lon']),
+                    gate_distance = self._interpolate_gate_crossing_metric(last_tp, current_tp,
                                                                            self._extract_numeric(last_point_data, 'dist'),
                                                                            self._extract_numeric(tp, 'dist'),
                                                                            gate,
@@ -265,15 +269,16 @@ class Racetrack:
                         # Keep lap/distance consistent on the exact sample where lap increments.
                         tp['rtx_lap_distance'] = segment_distance * (1.0 - finish_crossing_proportion_for_point)
                     else:
-                        tp['rtx_lap_distance'] = self._calculate_distance_along_track((tp['lat'], tp['lon']))
+                        tp['rtx_lap_distance'] = self._calculate_distance_along_track(current_tp)
 
+                lap_distance_value = tp.get('rtx_lap_distance')
                 if (
                     state == State.ON_TRACK
                     and lap > 0
                     and lap_start_time is not None
-                    and isinstance(tp.get('rtx_lap_distance'), (int, float))
+                    and isinstance(lap_distance_value, (int, float))
                 ):
-                    lap_distance = float(tp['rtx_lap_distance'])
+                    lap_distance = float(lap_distance_value)
                     elapsed_in_lap = (ts - lap_start_time).total_seconds()
                     if elapsed_in_lap >= 0.0:
                         lap_progress_samples[lap].append((lap_distance, elapsed_in_lap))
@@ -284,11 +289,11 @@ class Racetrack:
             tp['rtx_state'] = state.value
 
             last_ts = ts
-            last_tp = (tp['lat'], tp['lon'])
+            last_tp = current_tp
             last_point_data = tp
 
         if lap_total_times:
-            best_lap = min(lap_total_times, key=lap_total_times.get)
+            best_lap = min(lap_total_times, key=lambda lap_idx: lap_total_times[lap_idx])
 
             for point_lap, point_lap_distance, point_elapsed, point_data in lap_points_for_delta:
                 best_lap_time_at_distance = self._interpolate_lap_time_at_distance(
@@ -411,6 +416,16 @@ class Racetrack:
             proportion = self._gate_crossing_proportion(p1, p2, gate)
 
         return v1 + (v2 - v1) * proportion
+
+
+    def _extract_point_coords(self, data: dict[str, int | float | str | datetime]) -> tuple[float, float] | None:
+        lat = data.get('lat')
+        lon = data.get('lon')
+
+        if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)):
+            return None
+
+        return float(lat), float(lon)
 
 
     def _extract_numeric(self, data: dict | None, key: str) -> float | None:

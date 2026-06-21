@@ -1,4 +1,5 @@
 import argparse
+from typing import Any
 import rasterio # type: ignore[import-untyped]
 
 import matplotlib.pyplot as plt
@@ -30,6 +31,25 @@ PIT_EXIT_COLOR = '#7c3aed'
 class TrimMode(StrEnum):
     TIGHT = 'tight'
     BOX = 'box'
+
+
+def _plot_line_segments(ax: plt.Axes, xs: list[float | None], ys: list[float | None], **kwargs: Any) -> None:
+    segment_x: list[float] = []
+    segment_y: list[float] = []
+
+    for x, y in zip(xs, ys):
+        if x is None or y is None:
+            if segment_x:
+                ax.plot(segment_x, segment_y, **kwargs)
+                segment_x = []
+                segment_y = []
+            continue
+
+        segment_x.append(x)
+        segment_y.append(y)
+
+    if segment_x:
+        ax.plot(segment_x, segment_y, **kwargs)
 
 
 def _get_track_bounds(track_x: list[float | None], track_y: list[float | None], trim: TrimMode) -> tuple[float, float, float, float] | None:
@@ -90,7 +110,7 @@ def _plot_activity_track(ax: plt.Axes, path: Path, crs: rasterio.crs.CRS, line_w
             track_y.append(ys[0])
 
     logger.info("Plotting track...")
-    ax.plot(track_x, track_y, color='red', linewidth=line_width, alpha=0.8, zorder=10)
+    _plot_line_segments(ax, track_x, track_y, color='red', linewidth=line_width, alpha=0.8, zorder=10)
 
     return track_x, track_y
 
@@ -133,7 +153,7 @@ def _plot_racetrack(ax: plt.Axes, path: Path, crs: rasterio.crs.CRS, line_width:
         bounds_x.extend(xs)
         bounds_y.extend(ys)
 
-    ax.plot(track_x, track_y, color=TRACK_COLOR, linewidth=line_width, alpha=0.9, zorder=10)
+    _plot_line_segments(ax, track_x, track_y, color=TRACK_COLOR, linewidth=line_width, alpha=0.9, zorder=10)
 
     legend_handles = [
         Line2D([0], [0], color=TRACK_COLOR, lw=line_width, label='Track'),
@@ -210,9 +230,9 @@ def main(path: Path, dem_files: list[Path] | None = None, dem_crs: str | None = 
                 fontsize=20, color='black',
                 zorder=20,
             )
-        track_data = _plot_racetrack(ax, path, crs, line_width)
-        if track_data is not None:
-            track_x, track_y, bounds_x, bounds_y = track_data
+        racetrack_data = _plot_racetrack(ax, path, crs, line_width)
+        if racetrack_data is not None:
+            track_x, track_y, bounds_x, bounds_y = racetrack_data
             if trim is not None:
                 bounds = _get_track_bounds(bounds_x, bounds_y, trim)
                 if bounds is not None:
@@ -234,10 +254,10 @@ def main(path: Path, dem_files: list[Path] | None = None, dem_crs: str | None = 
                         zorder=20
                 )
 
-            track_data = _plot_activity_track(ax, path, crs, line_width)
+            activity_track_data = _plot_activity_track(ax, path, crs, line_width)
 
-            if track_data is not None:
-                track_x, track_y = track_data
+            if activity_track_data is not None:
+                track_x, track_y = activity_track_data
 
                 if trim is not None:
                     bounds = _get_track_bounds(track_x, track_y, trim)
