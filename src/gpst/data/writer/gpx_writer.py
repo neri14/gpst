@@ -366,7 +366,7 @@ class GpxWriter(Writer):
         trkpts = []
         for timestamp, data in track.points_iter:
             trkpt = self._create_trkpt_element(trkseg, timestamp, data, track)
-            if trkpt:
+            if trkpt is not None:
                 trkpts.append(trkpt)
         logger.debug(f"Created {len(trkpts)} track points in GPX.")
         return trkpts
