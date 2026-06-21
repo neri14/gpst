@@ -5,6 +5,7 @@ from pathlib import Path
 from ..data.processors import calculate_additional_data, fix_elevation
 from ..data.load_track import load_track
 from ..data.save_track import save_track
+from ..data.processors import load_racetrack
 from ._tool_descriptor import Tool
 from ._common import verify_in_path, verify_out_path
 from ..utils.logger import logger
@@ -12,7 +13,8 @@ from ..utils.logger import logger
 
 def main(in_path: Path, out_path: Path, accept: bool,
          dem_files: list[Path] | None, dem_crs: str | None,
-         elevation_smoothing_window: int, grade_calculation_window: int) -> bool:
+         elevation_smoothing_window: int, grade_calculation_window: int,
+         racetrack: Path | None) -> bool:
     if not verify_in_path(in_path):
         return False
     if not verify_out_path(out_path, accept):
@@ -33,6 +35,21 @@ def main(in_path: Path, out_path: Path, accept: bool,
     track = calculate_additional_data(track,
                                       elevation_smoothing_window=elevation_smoothing_window,
                                       grade_calculation_window=grade_calculation_window)
+    
+    if racetrack is not None:
+        logger.info(f"Loading racetrack from '{racetrack}'...")
+
+        try:
+            rt = load_racetrack(racetrack)
+            if rt is None:
+                logger.error(f"Failed to load racetrack from '{racetrack}'.")
+                return False
+        except Exception as e:
+            logger.error(f"Error loading racetrack from '{racetrack}': {e}")
+            return False
+
+        logger.info(f"Calculating racetrack data using '{racetrack}'...")
+        track = rt.calculate_racetrack_data(track)
 
     logger.info(f"Storing '{out_path}'...")
     ok = save_track(track, out_path)
@@ -100,6 +117,13 @@ def add_argparser(subparsers: argparse._SubParsersAction) -> None:
         metavar="METERS",
         help="Window size for grade calculation in meters (default: 100).",
         default=100
+    )
+    parser.add_argument(
+        "--track",
+        dest="racetrack",
+        type=Path,
+        metavar="TRACK_FILE",
+        help="Path to a track file to be used for racetrack calculations",
     )
 
 

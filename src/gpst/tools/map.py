@@ -1,4 +1,5 @@
 import argparse
+from typing import Any
 import rasterio # type: ignore[import-untyped]
 
 import matplotlib.pyplot as plt
@@ -8,10 +9,12 @@ from pathlib import Path
 from rasterio.merge import merge # type: ignore[import-untyped]
 from rasterio.warp import transform # type: ignore[import-untyped]
 from matplotlib.colors import LightSource
+from matplotlib.lines import Line2D
 
 from ._tool_descriptor import Tool
 from ._common import verify_in_path
 from ..data.load_track import load_track
+from ..data.processors import load_racetrack
 from ..utils.logger import logger
 
 WGS_84_EPSG = 'EPSG:4326' # WGS 84 - normal Latitude/Longitude
@@ -19,10 +22,34 @@ DEFAULT_CRS = 'EPSG:3857' # Web Mercator
 DEFAULT_WIDTH = 4096
 DEFAULT_HEIGHT = 4096
 
+TRACK_COLOR = '#111827'
+FINISH_COLOR = '#16a34a'
+PIT_ENTRY_COLOR = '#f97316'
+PIT_EXIT_COLOR = '#7c3aed'
+
 
 class TrimMode(StrEnum):
     TIGHT = 'tight'
     BOX = 'box'
+
+
+def _plot_line_segments(ax: plt.Axes, xs: list[float | None], ys: list[float | None], **kwargs: Any) -> None:
+    segment_x: list[float] = []
+    segment_y: list[float] = []
+
+    for x, y in zip(xs, ys):
+        if x is None or y is None:
+            if segment_x:
+                ax.plot(segment_x, segment_y, **kwargs)
+                segment_x = []
+                segment_y = []
+            continue
+
+        segment_x.append(x)
+        segment_y.append(y)
+
+    if segment_x:
+        ax.plot(segment_x, segment_y, **kwargs)
 
 
 def _get_track_bounds(track_x: list[float | None], track_y: list[float | None], trim: TrimMode) -> tuple[float, float, float, float] | None:
@@ -56,6 +83,87 @@ def _get_track_bounds(track_x: list[float | None], track_y: list[float | None], 
 
         return left, right, bottom, top
     return None
+
+
+def _plot_activity_track(ax: plt.Axes, path: Path, crs: rasterio.crs.CRS, line_width: float) -> tuple[list[float | None], list[float | None]] | None:
+    logger.info(f"Loading track from '{path}'...")
+    track = load_track(path)
+
+    if track is None:
+        logger.error(f"Failed to load track from '{path}'.")
+        return None
+
+    track_x: list[float | None] = []
+    track_y: list[float | None] = []
+
+    for _, point in track.points_iter:
+        lat = point.get('lat')
+        lon = point.get('lon')
+
+        if not isinstance(lat, float) or not isinstance(lon, float):
+            logger.warning("Point missing location data; skipping.")
+            track_x.append(None)
+            track_y.append(None)
+        else:
+            xs, ys = transform(WGS_84_EPSG, crs, [lon], [lat])
+            track_x.append(xs[0])
+            track_y.append(ys[0])
+
+    logger.info("Plotting track...")
+    _plot_line_segments(ax, track_x, track_y, color='red', linewidth=line_width, alpha=0.8, zorder=10)
+
+    return track_x, track_y
+
+
+def _plot_racetrack(ax: plt.Axes, path: Path, crs: rasterio.crs.CRS, line_width: float) -> tuple[list[float | None], list[float | None], list[float | None], list[float | None]] | None:
+    logger.info(f"Loading racetrack from '{path}'...")
+    racetrack = load_racetrack(path)
+
+    if racetrack is None:
+        logger.error(f"Failed to load racetrack from '{path}'.")
+        return None
+
+    track_x: list[float | None] = []
+    track_y: list[float | None] = []
+    bounds_x: list[float | None] = []
+    bounds_y: list[float | None] = []
+
+    for point in racetrack.track_points:
+        xs, ys = transform(WGS_84_EPSG, crs, [point.point[1]], [point.point[0]])
+        x = xs[0]
+        y = ys[0]
+        track_x.append(x)
+        track_y.append(y)
+        bounds_x.append(x)
+        bounds_y.append(y)
+
+    gate_styles = {
+        'finish': FINISH_COLOR,
+        'pit_entry': PIT_ENTRY_COLOR,
+        'pit_exit': PIT_EXIT_COLOR,
+    }
+
+    for gate in racetrack.gates:
+        color = gate_styles.get(gate.type.value, TRACK_COLOR)
+        gate_xs = [gate.p1[1], gate.p2[1]]
+        gate_ys = [gate.p1[0], gate.p2[0]]
+        xs, ys = transform(WGS_84_EPSG, crs, gate_xs, gate_ys)
+        ax.plot(xs, ys, color=color, linewidth=max(line_width, 3.0), alpha=0.95, zorder=20)
+        ax.scatter(xs, ys, color=color, s=20, zorder=21)
+        bounds_x.extend(xs)
+        bounds_y.extend(ys)
+
+    _plot_line_segments(ax, track_x, track_y, color=TRACK_COLOR, linewidth=line_width, alpha=0.9, zorder=10)
+
+    legend_handles = [
+        Line2D([0], [0], color=TRACK_COLOR, lw=line_width, label='Track'),
+        Line2D([0], [0], color=FINISH_COLOR, lw=max(line_width, 3.0), label='Finish line'),
+        Line2D([0], [0], color=PIT_ENTRY_COLOR, lw=max(line_width, 3.0), label='Pit entry'),
+        Line2D([0], [0], color=PIT_EXIT_COLOR, lw=max(line_width, 3.0), label='Pit exit'),
+    ]
+    ax.legend(handles=legend_handles, loc='upper right', frameon=True, framealpha=0.9)
+
+    return track_x, track_y, bounds_x, bounds_y
 
 
 def main(path: Path, dem_files: list[Path] | None = None, dem_crs: str | None = None, output: Path | None = None,
@@ -113,50 +221,54 @@ def main(path: Path, dem_files: list[Path] | None = None, dem_crs: str | None = 
             origin='upper'
         )
 
-    logger.info(f"Loading track from '{path}'...")
-    track = load_track(path)
-
-    if track is None:
-        logger.error(f"Failed to load track from '{path}'.")
-    else:
+    if path.suffix.lower() == '.track':
         if show_title:
-            title = str(track.metadata.get('name', 'Unknown Activity'))
-            ax.text(0.5, 1, title,
-                    transform=ax.transAxes,
-                    ha='center', va='top',
-                    fontsize=20, color='black',
-                    zorder=20
+            ax.text(
+                0.5, 1, path.stem,
+                transform=ax.transAxes,
+                ha='center', va='top',
+                fontsize=20, color='black',
+                zorder=20,
             )
+        racetrack_data = _plot_racetrack(ax, path, crs, line_width)
+        if racetrack_data is not None:
+            track_x, track_y, bounds_x, bounds_y = racetrack_data
+            if trim is not None:
+                bounds = _get_track_bounds(bounds_x, bounds_y, trim)
+                if bounds is not None:
+                    left, right, bottom, top = bounds
+                    ax.set_xlim(left, right)
+                    ax.set_ylim(bottom, top)
+    else:
+        track = load_track(path)
 
-        track_x: list = []
-        track_y: list = []
+        if track is None:
+            logger.error(f"Failed to load track from '{path}'.")
+        else:
+            if show_title:
+                title = str(track.metadata.get('name', 'Unknown Activity'))
+                ax.text(0.5, 1, title,
+                        transform=ax.transAxes,
+                        ha='center', va='top',
+                        fontsize=20, color='black',
+                        zorder=20
+                )
 
-        for _, point in track.points_iter:
-            lat = point.get('lat')
-            lon = point.get('lon')
+            activity_track_data = _plot_activity_track(ax, path, crs, line_width)
 
-            if not isinstance(lat, float) or not isinstance(lon, float):
-                logger.warning(f"Point missing location data; skipping.")
-                track_x.append(None)
-                track_y.append(None)
-            else:
-                xs, ys = transform(WGS_84_EPSG, crs, [lon], [lat])
-                track_x.append(xs[0])
-                track_y.append(ys[0])
+            if activity_track_data is not None:
+                track_x, track_y = activity_track_data
 
-        logger.info("Plotting track...")
-        ax.plot(track_x, track_y, color='red', linewidth=line_width, alpha=0.8, zorder=10)
+                if trim is not None:
+                    bounds = _get_track_bounds(track_x, track_y, trim)
+                    if bounds is not None:
+                        left, right, bottom, top = bounds
+                        ax.set_xlim(left, right)
+                        ax.set_ylim(bottom, top)
 
-        if trim is not None:
-            bounds = _get_track_bounds(track_x, track_y, trim)
-            if bounds is not None:
-                left, right, bottom, top = bounds
-                ax.set_xlim(left, right)
-                ax.set_ylim(bottom, top)
-
-        # If no DEM is present, ensure the plot has a reasonable aspect ratio
-        if not dem_files:
-            ax.set_aspect('equal')
+    # If no DEM is present, ensure the plot has a reasonable aspect ratio
+    if not dem_files:
+        ax.set_aspect('equal')
 
     if output:
         logger.info(f"Saving map to '{output}'...")
@@ -177,7 +289,7 @@ def add_argparser(subparsers: argparse._SubParsersAction) -> None:
         "path",
         type=Path,
         metavar="FILE",
-        help="Path to input file (.gpx, .fit, .vbo)."
+        help="Path to input file (.gpx, .fit, .vbo, .track)."
     )
     parser.add_argument(
         "--dem",

@@ -487,6 +487,64 @@ class AsxV11Parser(BaseParser):
     def parse_field(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
         logger.debug(f"Ignored ASX V11 field tag: \"{tag}\"")
         return {}
+    
+
+class RtxV1Parser(BaseParser):
+    def __init__(self):
+        super().__init__(name="RtxV1Parser")
+
+
+    def parse_metadata(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
+        if text is None:
+            logger.warning(f"RTX V1 metadata tag \"{tag}\" has no text.")
+            return {}
+        try:
+            data: dict[str, Value] = {}
+
+            match tag:
+                case _:
+                    logger.debug(f"Ignored RTX V1 metadata tag: \"{tag}\"")
+
+            return data
+        except ValueError as e:
+            logger.warning(f"Invalid type(s) for RTX V1 metadata tag: \"{tag}\", attribs: {attrib}, text: \"{text}\", error: {e}")
+        except Exception as e:
+            logger.warning(f"Error parsing RTX V1 metadata tag \"{tag}\": {e}")
+        return {}
+
+
+    def parse_field(self, tag: str, attrib: dict[str, str], text: str|None) -> dict[str, Value]:
+        if text is None:
+            logger.warning(f"RTX V1 field tag \"{tag}\" has no text.")
+            return {}
+
+        try:
+            data: dict[str, Value] = {}
+
+            match tag:
+                case "rtx_lap":
+                    data['rtx_lap'] = int(text)
+                case "rtx_state":
+                    data['rtx_state'] = text
+                case "rtx_lap_distance":
+                    data['rtx_lap_distance'] = float(text)
+                case "rtx_overall_best_lap_delta":
+                    data['rtx_overall_best_lap_delta'] = float(text)
+                case "rtx_overall_best_lap":
+                    data['rtx_overall_best_lap'] = float(text)
+                case "rtx_best_lap_delta":
+                    data['rtx_best_lap_delta'] = float(text)
+                case "rtx_best_lap":
+                    data['rtx_best_lap'] = float(text)
+                case _:
+                    logger.debug(f"Ignored RTX V1 field tag: \"{tag}\"")
+
+            return data
+        except ValueError as e:
+            logger.warning(f"Invalid type(s) for RTX V1 field tag: \"{tag}\", attribs: {attrib}, text: \"{text}\", error: {e}")
+        except Exception as e:
+            logger.warning(f"Error parsing RTX V1 field tag \"{tag}\": {e}")
+        return {}
 
 
 class CustomDataParser(BaseParser):
@@ -586,6 +644,10 @@ _namespace = {
     "asxv11": Namespace("ActivitySegmentsExtnsions v1.1", AsxV11Parser(),
                        "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensions/v11",
                        "http://www.n3r1.com/xmlschemas/ActivitySegmentsExtensionsv11.xsd"),
+
+    "rtxv1": Namespace("RaceTrackExtensions v1", RtxV1Parser(),
+                       "http://www.n3r1.com/xmlschemas/RaceTrackExtensions/v1",
+                       "http://www.n3r1.com/xmlschemas/RaceTrackExtensionsv1.xsd"),
 
     "gpst": Namespace("CustomDataExtensions", CustomDataParser(),
                       "http://www.n3r1.com/xmlschemas/CustomDataExtensions/v0",

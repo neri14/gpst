@@ -29,6 +29,7 @@ positional arguments:
     map       Draw map of input file.
     plot      Plot data from the input file.
     process   Process GPS track file and write results to a GPX file.
+    track     Generate a .track file from .fit, .gpx, or .vbo activity data.
 
 options:
   -h, --help  show this help message and exit
@@ -150,6 +151,44 @@ Example:
 `$ gpst map ./track.gpx --dem ./dem/*.asc --dem-crs EPSG:2180 -o map.png --width 1024 --height 1024 --trim box --line-width 1`
 
 [![Map](./docs/images/map.png)](./docs/images/map.png)
+
+
+### gpst track
+
+Generate a race `.track` definition by detecting full laps (finish-to-finish without pit entry/exit crossings) and building a median centerline.
+
+```
+$ gpst track -h
+usage: gpst track [-h] -o OUT_FILE (--finish-line LAT1 LON1 LAT2 LON2 | --gates-file FILE) [--pit-entry LAT1 LON1 LAT2 LON2] [--pit-exit LAT1 LON1 LAT2 LON2] [--samples N] [--min-lap-points N] [--min-lap-length METERS] [-y] IN_FILE
+
+positional arguments:
+  IN_FILE               Path to input file (.gpx, .fit, .vbo).
+
+options:
+  -h, --help            show this help message and exit
+  -o OUT_FILE, --output OUT_FILE
+                        Path to output .track file.
+  --finish-line LAT1 LON1 LAT2 LON2
+                        Finish gate as 4 values: LAT1 LON1 LAT2 LON2.
+  --gates-file FILE     Path to file with [finish_line] and optional [pit_entry]/[pit_exit] sections.
+  --pit-entry LAT1 LON1 LAT2 LON2
+                        Optional pit entry gate as 4 values: LAT1 LON1 LAT2 LON2.
+  --pit-exit LAT1 LON1 LAT2 LON2
+                        Optional pit exit gate as 4 values: LAT1 LON1 LAT2 LON2.
+  --samples N           Number of points in generated median line (default: 200).
+  --min-lap-points N    Minimum points between finish crossings to consider a lap (default: 20).
+  --min-lap-length METERS
+                        Minimum lap length in meters to consider a lap (default: 50).
+  -y, --yes             Accept questions (e.g. overwrite existing output file).
+```
+
+Example:
+
+`$ gpst track ./session.vbo -o ./track.track --finish-line 51.05224842382455 16.974045167417728 51.05214967454188 16.974058559964362 --pit-entry 51.052332 16.973482 51.052091 16.973468 --pit-exit 51.052304 16.974400 51.052316 16.974668 -y`
+
+Alternative using a gates file (`.track` format sections are accepted):
+
+`$ gpst track ./session.vbo -o ./track.track --gates-file ./auchan.track -y`
 
 
 ## Limitations
