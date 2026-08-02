@@ -111,7 +111,7 @@ def lines_intersect(lat1: float, lon1: float, lat2: float, lon2: float, lat3: fl
 
     # Check if segments intersect using 2D cross product method
     def ccw(ax: float, ay: float, bx: float, by: float, cx: float, cy: float) -> bool:
-        return (cy - ay) * (bx - ax) > (by - ay) * (cx - ax)
+        return (cy - ay) * (bx - ax) >= (by - ay) * (cx - ax)
 
     return ccw(p1[0], p1[1], p3[0], p3[1], p4[0], p4[1]) != ccw(p2[0], p2[1], p3[0], p3[1], p4[0], p4[1]) and \
            ccw(p1[0], p1[1], p2[0], p2[1], p3[0], p3[1]) != ccw(p1[0], p1[1], p2[0], p2[1], p4[0], p4[1])
