@@ -25,6 +25,8 @@
       <xsd:element name="rtx_overall_best_lap" type="Seconds_t" minOccurs="0" />
       <xsd:element name="rtx_best_lap_delta" type="Seconds_t" minOccurs="0" />
       <xsd:element name="rtx_best_lap" type="Seconds_t" minOccurs="0" />
+      <xsd:element name="rtx_reference_lap_delta" type="Seconds_t" minOccurs="0" />
+      <xsd:element name="rtx_reference_lap" type="Seconds_t" minOccurs="0" />
     </xsd:sequence>
   </xsd:complexType>
 

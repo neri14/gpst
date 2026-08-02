@@ -78,7 +78,66 @@ class Racetrack:
         self.debug()
 
 
-    def calculate_racetrack_data(self, track: Track):
+    @staticmethod
+    def extract_best_lap_progress(track: Track) -> tuple[float, list[tuple[float, float]]] | None:
+        """Extract the best lap time and (distance, elapsed) progress samples from a processed track.
+
+        Returns (best_lap_time, progress_samples) or None if no lap segments are found.
+        """
+        lap_segments = [(ts, seg) for ts, seg in track.segments_iter
+                        if seg.get('type') == SegmentType.LAP]
+
+        if not lap_segments:
+            return None
+
+        best_lap_segment = min(lap_segments, key=lambda item: item[1].get('total_elapsed_time', float('inf')))
+        best_lap_time = best_lap_segment[1].get('total_elapsed_time')
+        if not isinstance(best_lap_time, (int, float)):
+            return None
+
+        best_lap_name = best_lap_segment[1].get('name', '')
+        # Parse lap number from segment name like "Lap 3"
+        try:
+            best_lap_num = int(best_lap_name.split()[-1])
+        except (ValueError, IndexError):
+            return None
+
+        lap_start_timer = best_lap_segment[1].get('start_timer')
+        lap_start_time: datetime | None = best_lap_segment[1].get('start_time')
+
+        progress_samples: list[tuple[float, float]] = []
+        for _, point in track.points_iter:
+            point_lap = point.get('rtx_lap')
+            if point_lap != best_lap_num:
+                continue
+
+            lap_distance = point.get('rtx_lap_distance')
+            if not isinstance(lap_distance, (int, float)):
+                continue
+
+            if isinstance(lap_start_timer, (int, float)):
+                timer = point.get('timer')
+                if isinstance(timer, (int, float)):
+                    elapsed = timer - lap_start_timer
+                    if elapsed >= 0.0:
+                        progress_samples.append((lap_distance, elapsed))
+            elif isinstance(lap_start_time, datetime):
+                point_time = point.get('time')
+                if isinstance(point_time, datetime):
+                    elapsed = (point_time - lap_start_time).total_seconds()
+                    if elapsed >= 0.0:
+                        progress_samples.append((lap_distance, elapsed))
+
+        if len(progress_samples) < 2:
+            return None
+
+        return float(best_lap_time), progress_samples
+
+
+    def calculate_racetrack_data(self, track: Track,
+                                  reference_lap_time: float | None = None,
+                                  reference_lap_progress: list[tuple[float, float]] | None = None,
+                                  reference_best: bool = False):
 
         class State(StrEnum):
             UNKNOWN = "unknown"
@@ -321,6 +380,45 @@ class Racetrack:
                     point_data['rtx_best_lap_delta'] = point_elapsed - best_so_far_time_at_distance
                     point_data['rtx_best_lap'] = lap_total_times[best_so_far_lap]
 
+        if reference_lap_time is not None and reference_lap_progress is not None:
+            for point_lap, point_lap_distance, point_elapsed, point_data in lap_points_for_delta:
+                effective_ref_time = reference_lap_time
+                effective_ref_progress = reference_lap_progress
+
+                if reference_best:
+                    # Check if a previously completed lap beats the file reference.
+                    best_so_far_candidates = [
+                        lap_idx for lap_idx in lap_total_times.keys() if lap_idx < point_lap
+                    ]
+                    if best_so_far_candidates:
+                        best_so_far_lap = min(best_so_far_candidates, key=lambda lap_idx: lap_total_times[lap_idx])
+                        if lap_total_times[best_so_far_lap] < reference_lap_time:
+                            effective_ref_time = lap_total_times[best_so_far_lap]
+                            effective_ref_progress = None  # use lap_progress_samples instead
+
+                if effective_ref_progress is not None:
+                    ref_time_at_distance = self._interpolate_reference_time_at_distance(
+                        effective_ref_progress,
+                        point_lap_distance,
+                    )
+                    if ref_time_at_distance is not None:
+                        point_data['rtx_reference_lap_delta'] = point_elapsed - ref_time_at_distance
+                        point_data['rtx_reference_lap'] = effective_ref_time
+                else:
+                    # reference_best kicked in with a faster completed lap.
+                    best_so_far_lap = min(
+                        [lap_idx for lap_idx in lap_total_times.keys() if lap_idx < point_lap],
+                        key=lambda lap_idx: lap_total_times[lap_idx],
+                    )
+                    ref_time_at_distance = self._interpolate_lap_time_at_distance(
+                        lap_progress_samples,
+                        best_so_far_lap,
+                        point_lap_distance,
+                    )
+                    if ref_time_at_distance is not None:
+                        point_data['rtx_reference_lap_delta'] = point_elapsed - ref_time_at_distance
+                        point_data['rtx_reference_lap'] = lap_total_times[best_so_far_lap]
+
         return track
 
 
@@ -464,6 +562,36 @@ class Racetrack:
 
             if prev_distance <= lap_distance <= current_distance:
                 ratio = (lap_distance - prev_distance) / (current_distance - prev_distance)
+                return prev_elapsed + (current_elapsed - prev_elapsed) * ratio
+
+            prev_distance, prev_elapsed = current_distance, current_elapsed
+
+        return None
+
+    def _interpolate_reference_time_at_distance(self,
+                                                 progress_samples: list[tuple[float, float]],
+                                                 distance: float) -> float | None:
+        """Interpolate the reference time at a given distance from a flat list of (distance, time) samples."""
+        if not progress_samples or len(progress_samples) < 2:
+            return None
+
+        sorted_samples = sorted(progress_samples, key=lambda item: item[0])
+
+        prev_distance, prev_elapsed = sorted_samples[0]
+        if math.isclose(distance, prev_distance, rel_tol=1e-9, abs_tol=1e-6):
+            return prev_elapsed
+
+        for current_distance, current_elapsed in sorted_samples[1:]:
+            if math.isclose(distance, current_distance, rel_tol=1e-9, abs_tol=1e-6):
+                return current_elapsed
+
+            if current_distance <= prev_distance:
+                if current_elapsed < prev_elapsed:
+                    prev_elapsed = current_elapsed
+                continue
+
+            if prev_distance <= distance <= current_distance:
+                ratio = (distance - prev_distance) / (current_distance - prev_distance)
                 return prev_elapsed + (current_elapsed - prev_elapsed) * ratio
 
             prev_distance, prev_elapsed = current_distance, current_elapsed

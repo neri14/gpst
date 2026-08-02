@@ -14,10 +14,18 @@ from ..utils.logger import logger
 def main(in_path: Path, out_path: Path, accept: bool,
          dem_files: list[Path] | None, dem_crs: str | None,
          elevation_smoothing_window: int, grade_calculation_window: int,
-         racetrack: Path | None) -> bool:
+         racetrack: Path | None,
+         reference: Path | None, reference_best: bool) -> bool:
     if not verify_in_path(in_path):
         return False
     if not verify_out_path(out_path, accept):
+        return False
+
+    if reference is not None and racetrack is None:
+        logger.error("The '--reference' option requires '--track' to be specified.")
+        return False
+    if reference_best and racetrack is None:
+        logger.error("The '--reference-best' option requires '--track' to be specified.")
         return False
 
     logger.info(f"Loading '{in_path}'...")
@@ -48,8 +56,35 @@ def main(in_path: Path, out_path: Path, accept: bool,
             logger.error(f"Error loading racetrack from '{racetrack}': {e}")
             return False
 
+        reference_lap_time: float | None = None
+        reference_lap_progress: list[tuple[float, float]] | None = None
+
+        if reference is not None:
+            logger.info(f"Loading reference track from '{reference}'...")
+            ref_track = load_track(reference)
+            if ref_track is None:
+                logger.error(f"Failed to load reference track from '{reference}'.")
+                return False
+
+            logger.info("Processing reference track...")
+            ref_track = calculate_additional_data(ref_track,
+                                                  elevation_smoothing_window=elevation_smoothing_window,
+                                                  grade_calculation_window=grade_calculation_window)
+            ref_track = rt.calculate_racetrack_data(ref_track)
+
+            ref_result = rt.extract_best_lap_progress(ref_track)
+            if ref_result is None:
+                logger.error(f"No valid laps found in reference track '{reference}'.")
+                return False
+
+            reference_lap_time, reference_lap_progress = ref_result
+            logger.info(f"Reference best lap time: {reference_lap_time:.3f}s")
+
         logger.info(f"Calculating racetrack data using '{racetrack}'...")
-        track = rt.calculate_racetrack_data(track)
+        track = rt.calculate_racetrack_data(track,
+                                            reference_lap_time=reference_lap_time,
+                                            reference_lap_progress=reference_lap_progress,
+                                            reference_best=reference_best)
 
     logger.info(f"Storing '{out_path}'...")
     ok = save_track(track, out_path)
@@ -124,6 +159,19 @@ def add_argparser(subparsers: argparse._SubParsersAction) -> None:
         type=Path,
         metavar="TRACK_FILE",
         help="Path to a track file to be used for racetrack calculations",
+    )
+    parser.add_argument(
+        "--reference",
+        dest="reference",
+        type=Path,
+        metavar="REF_FILE",
+        help="Path to an input file (.gpx, .fit, .vbo) to use as reference lap (requires --track).",
+    )
+    parser.add_argument(
+        "--reference-best",
+        dest="reference_best",
+        action="store_true",
+        help="Update the reference lap if the current session produces a faster lap (requires --track and --reference).",
     )
 
 

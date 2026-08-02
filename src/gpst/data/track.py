@@ -106,6 +106,8 @@ point_fields = {
     'rtx_overall_best_lap':             time_t,
     'rtx_best_lap_delta':               time_delta_t,
     'rtx_best_lap':                     time_t,
+    'rtx_reference_lap_delta':          time_delta_t,
+    'rtx_reference_lap':                time_t,
 }
 
 metadata_fields = {
