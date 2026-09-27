@@ -27,6 +27,8 @@
       <xsd:element name="rtx_best_lap" type="Seconds_t" minOccurs="0" />
       <xsd:element name="rtx_reference_lap_delta" type="Seconds_t" minOccurs="0" />
       <xsd:element name="rtx_reference_lap" type="Seconds_t" minOccurs="0" />
+      <xsd:element name="rtx_reference_lap_speed" type="Speed_t" minOccurs="0" />
+      <xsd:element name="rtx_reference_lap_speed_delta" type="Speed_t" minOccurs="0" />
     </xsd:sequence>
   </xsd:complexType>
 
@@ -48,6 +50,17 @@
     <xsd:annotation><xsd:documentation>
       This type contains a time delta value measured in seconds.
       Positive means behind reference, negative means ahead of reference.
+    </xsd:documentation></xsd:annotation>
+    <xsd:restriction base="xsd:double"/>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="Speed_t">
+    <xsd:annotation><xsd:documentation>
+      This type contains a speed value measured in meters per second (unless a
+      different speed field was selected for reference-speed comparisons, in
+      which case it follows that field's unit instead).
+      For the delta element, positive means faster than reference, negative
+      means slower than reference.
     </xsd:documentation></xsd:annotation>
     <xsd:restriction base="xsd:double"/>
   </xsd:simpleType>

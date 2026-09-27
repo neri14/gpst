@@ -45,6 +45,7 @@ work_t              = Type('work',             int,          'joules',          
 lap_t               = Type('lap',              int,          'lap index',               None,     0,        None)
 lap_state_t         = Type('lap state',        str,          None,                      None,     None,     None)
 time_delta_t        = Type('time delta',        float,        'seconds',                 's',      None,     None)
+speed_delta_t       = Type('speed delta',      float,        'meters per second',       'm/s',    None,     None)
 
 int_t               = Type('int',              int,          None,                      None,     None,     None)
 float_t             = Type('float',            float,        None,                      None,     None,     None)
@@ -108,6 +109,8 @@ point_fields = {
     'rtx_best_lap':                     time_t,
     'rtx_reference_lap_delta':          time_delta_t,
     'rtx_reference_lap':                time_t,
+    'rtx_reference_lap_speed':          speed_t,
+    'rtx_reference_lap_speed_delta':    speed_delta_t,
 }
 
 metadata_fields = {

@@ -70,6 +70,35 @@ def _build_three_lap_track_with_timer_and_dist() -> Track:
     return track
 
 
+def _build_three_lap_track_with_speed() -> Track:
+    """Same layout as _build_three_lap_track_for_delta_test, with a constant per-point
+    'speed' field so reference-speed delta math can be asserted precisely."""
+    track = Track()
+    base_time = datetime(2026, 1, 1, 12, 0, 0)
+
+    points = [
+        (0.0, -1.0),
+        (0.0, 1.0),
+        (0.0, 2.0),
+        (0.0, 3.0),
+        (0.0, -1.0),
+        (0.0, -2.0),
+        (0.0, -3.0),
+        (0.0, 1.0),
+        (0.0, 2.0),
+        (0.0, 3.0),
+        (0.0, -1.0),
+    ]
+
+    offsets = [0, 1, 11, 21, 31, 41, 51, 61, 70, 79, 89]
+
+    for offset, (lat, lon) in zip(offsets, points):
+        ts = base_time + timedelta(seconds=offset)
+        track.upsert_point(ts, {"time": ts, "lat": lat, "lon": lon, "speed": 50.0})
+
+    return track
+
+
 def _build_track_with_finish_line_oscillation() -> Track:
     track = Track()
     base_time = datetime(2026, 1, 1, 12, 0, 0)
@@ -290,11 +319,13 @@ def test_extract_best_lap_progress_returns_correct_data():
     result = Racetrack.extract_best_lap_progress(out)
     assert result is not None
 
-    best_time, progress = result
+    best_time, progress, speed_progress = result
     assert best_time > 0.0
     assert len(progress) >= 2
     # Verify we got valid (distance, elapsed) pairs for the best lap.
     assert all(isinstance(d, float) and isinstance(t, float) for d, t in progress)
+    # The builder doesn't set a 'speed' field, so speed samples should be empty (graceful degradation).
+    assert speed_progress == []
 
 
 def test_extract_best_lap_progress_returns_none_for_no_laps():
@@ -414,6 +445,132 @@ def test_reference_best_without_flag_always_uses_file_reference():
         if 'rtx_reference_lap' in point:
             assert point['rtx_reference_lap'] == ref_time, \
                 f"Without --reference-best, all points should reference {ref_time}"
+
+
+def test_extract_best_lap_progress_includes_speed_samples():
+    rt = Racetrack(gate_debounce_distance_m=0.0)
+    rt.add_gate((-1.0, 0.0), (1.0, 0.0), GateType.FINISH)
+    rt._calculate_distance_along_track = lambda point: abs(point[1])
+
+    track = _build_three_lap_track_with_speed()
+    out = rt.calculate_racetrack_data(track)
+
+    result = Racetrack.extract_best_lap_progress(out)
+    assert result is not None
+
+    best_time, progress, speed_progress = result
+    assert len(speed_progress) >= 2
+    assert all(isinstance(d, float) and isinstance(s, float) for d, s in speed_progress)
+    assert all(s == 50.0 for _, s in speed_progress)
+
+
+def test_extract_best_lap_progress_uses_custom_speed_field():
+    rt = Racetrack(gate_debounce_distance_m=0.0)
+    rt.add_gate((-1.0, 0.0), (1.0, 0.0), GateType.FINISH)
+    rt._calculate_distance_along_track = lambda point: abs(point[1])
+
+    track = _build_three_lap_track_with_speed()
+    for _, point in track.points_iter:
+        point["velocity"] = 999.0
+
+    out = rt.calculate_racetrack_data(track)
+
+    result = Racetrack.extract_best_lap_progress(out, speed_field="velocity")
+    assert result is not None
+
+    _, _, speed_progress = result
+    assert len(speed_progress) >= 2
+    assert all(s == 999.0 for _, s in speed_progress)
+
+
+def test_reference_speed_delta_is_computed_with_reference_speed_data():
+    rt = Racetrack(gate_debounce_distance_m=0.0)
+    rt.add_gate((-1.0, 0.0), (1.0, 0.0), GateType.FINISH)
+    rt._calculate_distance_along_track = lambda point: abs(point[1])
+
+    track = _build_three_lap_track_with_speed()
+
+    ref_time = 25.0
+    ref_progress = [(0.0, 0.0), (1.0, 10.0), (2.0, 18.0), (3.0, 25.0)]
+    # Linear: speed = 20.0 + 2.0 * distance, so the formula holds at any interpolated point too.
+    ref_speed_progress = [(0.0, 20.0), (1.0, 22.0), (2.0, 24.0), (3.0, 26.0)]
+
+    out = rt.calculate_racetrack_data(track,
+                                      reference_lap_time=ref_time,
+                                      reference_lap_progress=ref_progress,
+                                      reference_lap_speed_progress=ref_speed_progress)
+
+    points = [point for _, point in out.points_iter]
+    lap1_points = [point for point in points if point.get("rtx_lap") == 1]
+
+    assert any("rtx_reference_lap_speed" in point for point in lap1_points)
+    assert any("rtx_reference_lap_speed_delta" in point for point in lap1_points)
+
+    for point in lap1_points:
+        if "rtx_reference_lap_speed" in point:
+            expected_ref_speed = 20.0 + 2.0 * point["rtx_lap_distance"]
+            assert abs(point["rtx_reference_lap_speed"] - expected_ref_speed) < 1e-6
+            assert point["rtx_reference_lap_speed_delta"] == point["speed"] - point["rtx_reference_lap_speed"]
+
+
+def test_reference_speed_fields_not_set_without_reference_speed_progress():
+    rt = Racetrack(gate_debounce_distance_m=0.0)
+    rt.add_gate((-1.0, 0.0), (1.0, 0.0), GateType.FINISH)
+    rt._calculate_distance_along_track = lambda point: abs(point[1])
+
+    track = _build_three_lap_track_with_speed()
+
+    ref_time = 25.0
+    ref_progress = [(0.0, 0.0), (1.0, 10.0), (2.0, 18.0), (3.0, 25.0)]
+
+    out = rt.calculate_racetrack_data(track,
+                                      reference_lap_time=ref_time,
+                                      reference_lap_progress=ref_progress)
+    # reference_lap_speed_progress intentionally omitted (defaults to None).
+
+    points = [point for _, point in out.points_iter]
+    assert all("rtx_reference_lap_speed" not in point for point in points)
+    assert all("rtx_reference_lap_speed_delta" not in point for point in points)
+    # Time-based reference fields should still be set though - the two are independent.
+    assert any("rtx_reference_lap_delta" in point for point in points)
+
+
+def test_reference_best_speed_switches_to_session_lap_speed_samples():
+    """With --reference-best, once a session lap beats a (deliberately very slow) file
+    reference, rtx_reference_lap_speed for later points should come from that session
+    lap's own recorded speed (~50.0), not the file reference's speed trace (20.0-26.0)."""
+    rt = Racetrack(gate_debounce_distance_m=0.0)
+    rt.add_gate((-1.0, 0.0), (1.0, 0.0), GateType.FINISH)
+    rt._calculate_distance_along_track = lambda point: abs(point[1])
+
+    out_no_ref = rt.calculate_racetrack_data(_build_three_lap_track_with_speed())
+    lap_times = sorted(
+        seg['total_elapsed_time'] for _, seg in out_no_ref.segments_iter
+        if seg.get('type') == SegmentType.LAP
+    )
+    assert len(lap_times) >= 2, "Need at least 2 laps for this test"
+
+    ref_time = lap_times[-1] + 0.001  # slower than every session lap
+    ref_progress = [(0.0, 0.0), (1.0, ref_time * 0.4), (2.0, ref_time * 0.75), (3.0, ref_time)]
+    ref_speed_progress = [(0.0, 20.0), (1.0, 22.0), (2.0, 24.0), (3.0, 26.0)]
+
+    out = rt.calculate_racetrack_data(_build_three_lap_track_with_speed(),
+                                      reference_lap_time=ref_time,
+                                      reference_lap_progress=ref_progress,
+                                      reference_lap_speed_progress=ref_speed_progress,
+                                      reference_best=True)
+
+    ref_speed_values = [
+        point['rtx_reference_lap_speed'] for _, point in out.points_iter
+        if 'rtx_reference_lap_speed' in point
+    ]
+    assert ref_speed_values, "Expected some rtx_reference_lap_speed values"
+
+    # Lap 1 (before any lap has completed) must still use the file reference.
+    assert any(20.0 <= v <= 26.0 for v in ref_speed_values)
+    # Later laps, after reference_best switches to a faster same-session lap, must use
+    # that lap's own recorded speed instead.
+    assert any(abs(v - 50.0) < 1.0 for v in ref_speed_values)
 
 
 def test_interpolate_reference_time_at_distance_returns_correct_value():

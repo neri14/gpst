@@ -79,10 +79,14 @@ class Racetrack:
 
 
     @staticmethod
-    def extract_best_lap_progress(track: Track) -> tuple[float, list[tuple[float, float]]] | None:
+    def extract_best_lap_progress(track: Track, speed_field: str = 'speed') -> tuple[float, list[tuple[float, float]], list[tuple[float, float]]] | None:
         """Extract the best lap time and (distance, elapsed) progress samples from a processed track.
 
-        Returns (best_lap_time, progress_samples) or None if no lap segments are found.
+        Also extracts (distance, speed) samples from `speed_field`, sparse/empty if that field
+        is missing on some or all points.
+
+        Returns (best_lap_time, progress_samples, speed_progress_samples) or None if no lap
+        segments are found.
         """
         lap_segments = [(ts, seg) for ts, seg in track.segments_iter
                         if seg.get('type') == SegmentType.LAP]
@@ -106,6 +110,7 @@ class Racetrack:
         lap_start_time: datetime | None = best_lap_segment[1].get('start_time')
 
         progress_samples: list[tuple[float, float]] = []
+        speed_progress_samples: list[tuple[float, float]] = []
         for _, point in track.points_iter:
             point_lap = point.get('rtx_lap')
             if point_lap != best_lap_num:
@@ -121,17 +126,23 @@ class Racetrack:
                     elapsed = timer - lap_start_timer
                     if elapsed >= 0.0:
                         progress_samples.append((lap_distance, elapsed))
+                        speed = point.get(speed_field)
+                        if isinstance(speed, (int, float)):
+                            speed_progress_samples.append((lap_distance, float(speed)))
             elif isinstance(lap_start_time, datetime):
                 point_time = point.get('time')
                 if isinstance(point_time, datetime):
                     elapsed = (point_time - lap_start_time).total_seconds()
                     if elapsed >= 0.0:
                         progress_samples.append((lap_distance, elapsed))
+                        speed = point.get(speed_field)
+                        if isinstance(speed, (int, float)):
+                            speed_progress_samples.append((lap_distance, float(speed)))
 
         if len(progress_samples) < 2:
             return None
 
-        return float(best_lap_time), progress_samples
+        return float(best_lap_time), progress_samples, speed_progress_samples
 
 
     @staticmethod
@@ -154,7 +165,9 @@ class Racetrack:
     def calculate_racetrack_data(self, track: Track,
                                   reference_lap_time: float | None = None,
                                   reference_lap_progress: list[tuple[float, float]] | None = None,
-                                  reference_best: bool = False):
+                                  reference_lap_speed_progress: list[tuple[float, float]] | None = None,
+                                  reference_best: bool = False,
+                                  reference_speed_field: str = 'speed'):
 
         class State(StrEnum):
             UNKNOWN = "unknown"
@@ -175,6 +188,7 @@ class Racetrack:
         lap_times: list[float] = []
         lap_total_times: dict[int, float] = {}
         lap_progress_samples: dict[int, list[tuple[float, float]]] = defaultdict(list)
+        lap_speed_samples: dict[int, list[tuple[float, float]]] = defaultdict(list)
         lap_points_for_delta: list[tuple[int, float, float, dict]] = []
         pit_times: list[float] = []
 
@@ -240,6 +254,11 @@ class Racetrack:
                                                                            self._extract_numeric(tp, 'dist'),
                                                                            gate,
                                                                            crossing_proportion)
+                    gate_speed = self._interpolate_gate_crossing_metric(last_tp, current_tp,
+                                                                        self._extract_numeric(last_point_data, reference_speed_field),
+                                                                        self._extract_numeric(tp, reference_speed_field),
+                                                                        gate,
+                                                                        crossing_proportion)
 
                     if gate.type == GateType.PIT_EXIT:
                         state = State.ON_TRACK
@@ -326,6 +345,8 @@ class Racetrack:
                                     if lap_time > 0.0:
                                         lap_segment['avg_speed'] = lap_distance / lap_time
                                     lap_progress_samples[lap].append((lap_distance, lap_time))
+                                    if gate_speed is not None:
+                                        lap_speed_samples[lap].append((lap_distance, gate_speed))
 
                             track.add_segment(lap_segment)
                         
@@ -339,6 +360,8 @@ class Racetrack:
 
                         if state == State.ON_TRACK:
                             lap_progress_samples[lap].append((0.0, 0.0))
+                            if gate_speed is not None:
+                                lap_speed_samples[lap].append((0.0, gate_speed))
 
                 if state == State.ON_TRACK:
                     if finish_crossing_proportion_for_point is not None:
@@ -358,6 +381,9 @@ class Racetrack:
                     elapsed_in_lap = (ts - lap_start_time).total_seconds()
                     if elapsed_in_lap >= 0.0:
                         lap_progress_samples[lap].append((lap_distance, elapsed_in_lap))
+                        point_speed = tp.get(reference_speed_field)
+                        if isinstance(point_speed, (int, float)):
+                            lap_speed_samples[lap].append((lap_distance, float(point_speed)))
                         lap_points_for_delta.append((lap, lap_distance, elapsed_in_lap, tp))
 
 
@@ -401,6 +427,7 @@ class Racetrack:
             for point_lap, point_lap_distance, point_elapsed, point_data in lap_points_for_delta:
                 effective_ref_time = reference_lap_time
                 effective_ref_progress = reference_lap_progress
+                effective_ref_speed_progress = reference_lap_speed_progress
 
                 if reference_best:
                     # Check if a previously completed lap beats the file reference.
@@ -412,6 +439,7 @@ class Racetrack:
                         if lap_total_times[best_so_far_lap] < reference_lap_time:
                             effective_ref_time = lap_total_times[best_so_far_lap]
                             effective_ref_progress = None  # use lap_progress_samples instead
+                            effective_ref_speed_progress = lap_speed_samples.get(best_so_far_lap)
 
                 if effective_ref_progress is not None:
                     ref_time_at_distance = self._interpolate_reference_time_at_distance(
@@ -435,6 +463,17 @@ class Racetrack:
                     if ref_time_at_distance is not None:
                         point_data['rtx_reference_lap_delta'] = point_elapsed - ref_time_at_distance
                         point_data['rtx_reference_lap'] = lap_total_times[best_so_far_lap]
+
+                if effective_ref_speed_progress is not None:
+                    ref_speed_at_distance = self._interpolate_reference_time_at_distance(
+                        effective_ref_speed_progress,
+                        point_lap_distance,
+                    )
+                    if ref_speed_at_distance is not None:
+                        point_data['rtx_reference_lap_speed'] = ref_speed_at_distance
+                        point_speed = point_data.get(reference_speed_field)
+                        if isinstance(point_speed, (int, float)):
+                            point_data['rtx_reference_lap_speed_delta'] = point_speed - ref_speed_at_distance
 
         return track
 

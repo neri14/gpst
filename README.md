@@ -42,7 +42,7 @@ options:
 ```
 $ gpst process -h
 usage: gpst process [-h] -o OUT_FILE [-y] [--fix-elevation DEM_FILE [DEM_FILE ...]] [--dem-crs DEM_CRS] [--elevation-smoothing-window METERS] [--grade-calculation-window METERS]
-                     [--track TRACK_FILE] [--reference REF_FILE] [--reference-best] [--hotlap] IN_FILE
+                     [--track TRACK_FILE] [--reference REF_FILE] [--reference-best] [--reference-speed-field FIELD] [--hotlap] IN_FILE
 
 positional arguments:
   IN_FILE               Path to input file (.gpx, .fit, .vbo).
@@ -62,6 +62,8 @@ options:
   --track TRACK_FILE     Path to a track file to be used for racetrack calculations.
   --reference REF_FILE  Path to an input file (.gpx, .fit, .vbo) to use as reference lap (requires --track).
   --reference-best      Update the reference lap if the current session produces a faster lap (requires --track and --reference).
+  --reference-speed-field FIELD
+                        Point field to use for reference-lap speed comparisons (requires --reference; default: 'speed').
   --hotlap              Trim output to the fastest lap of the session, plus 60s before and after (requires --track).
 ```
 
@@ -94,6 +96,8 @@ When `--fix-elevation` is in use, tool produces report in form of csv file and p
 `$ gpst process ./session.vbo --track ./poznan.track --reference ./reference.vbo --hotlap -o ./hotlap.gpx`
 
 When combined with `--reference`, the trimmed output keeps `rtx_reference_lap` set on every point (holding the reference lap time throughout the pre-roll and the hotlap itself, then switching to the hotlap's own time from the moment it finishes if it was faster), while `rtx_reference_lap_delta` (the live delta/timer) is only present for points inside the hotlap itself, not during the 60s padding before or after.
+
+`--reference` also adds a live speed comparison: `rtx_reference_lap_speed` (the reference lap's speed at the current point's track distance) and `rtx_reference_lap_speed_delta` (current speed minus that). By default these are based on the `speed` field (m/s); use `--reference-speed-field FIELD` to compare against a different point field instead, e.g. a raw device channel such as `velocity` (in whatever unit that field is in - both sides of the comparison always use the same field, so the result stays unit-consistent). The tool fails fast with a clear error if the chosen field doesn't exist with at least one numeric value in either the reference or session track. Like `rtx_reference_lap_delta`, both new fields are scoped to the hotlap window only when `--hotlap` is used.
 
 
 ### gpst plot

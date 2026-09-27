@@ -14,6 +14,7 @@ from ..utils.logger import logger
 
 
 HOTLAP_PADDING_SECONDS = 60.0
+DEFAULT_REFERENCE_SPEED_FIELD = "speed"
 
 
 def main(in_path: Path, out_path: Path, accept: bool,
@@ -21,6 +22,7 @@ def main(in_path: Path, out_path: Path, accept: bool,
          elevation_smoothing_window: int, grade_calculation_window: int,
          racetrack: Path | None,
          reference: Path | None, reference_best: bool,
+         reference_speed_field: str,
          hotlap: bool) -> bool:
     if not verify_in_path(in_path):
         return False
@@ -35,6 +37,9 @@ def main(in_path: Path, out_path: Path, accept: bool,
         return False
     if hotlap and racetrack is None:
         logger.error("The '--hotlap' option requires '--track' to be specified.")
+        return False
+    if reference_speed_field != DEFAULT_REFERENCE_SPEED_FIELD and reference is None:
+        logger.error("The '--reference-speed-field' option requires '--reference' to be specified.")
         return False
 
     logger.info(f"Loading '{in_path}'...")
@@ -67,6 +72,7 @@ def main(in_path: Path, out_path: Path, accept: bool,
 
         reference_lap_time: float | None = None
         reference_lap_progress: list[tuple[float, float]] | None = None
+        reference_lap_speed_progress: list[tuple[float, float]] | None = None
 
         if reference is not None:
             logger.info(f"Loading reference track from '{reference}'...")
@@ -79,21 +85,34 @@ def main(in_path: Path, out_path: Path, accept: bool,
             ref_track = calculate_additional_data(ref_track,
                                                   elevation_smoothing_window=elevation_smoothing_window,
                                                   grade_calculation_window=grade_calculation_window)
+
+            def _has_speed_field(t, field: str) -> bool:
+                return any(isinstance(point.get(field), (int, float)) for _, point in t.points_iter)
+
+            if not _has_speed_field(ref_track, reference_speed_field):
+                logger.error(f"Field '{reference_speed_field}' not found (or has no numeric values) in reference track '{reference}'.")
+                return False
+            if not _has_speed_field(track, reference_speed_field):
+                logger.error(f"Field '{reference_speed_field}' not found (or has no numeric values) in session track '{in_path}'.")
+                return False
+
             ref_track = rt.calculate_racetrack_data(ref_track)
 
-            ref_result = rt.extract_best_lap_progress(ref_track)
+            ref_result = rt.extract_best_lap_progress(ref_track, speed_field=reference_speed_field)
             if ref_result is None:
                 logger.error(f"No valid laps found in reference track '{reference}'.")
                 return False
 
-            reference_lap_time, reference_lap_progress = ref_result
+            reference_lap_time, reference_lap_progress, reference_lap_speed_progress = ref_result
             logger.info(f"Reference best lap time: {reference_lap_time:.3f}s")
 
         logger.info(f"Calculating racetrack data using '{racetrack}'...")
         track = rt.calculate_racetrack_data(track,
                                             reference_lap_time=reference_lap_time,
                                             reference_lap_progress=reference_lap_progress,
-                                            reference_best=reference_best)
+                                            reference_lap_speed_progress=reference_lap_speed_progress,
+                                            reference_best=reference_best,
+                                            reference_speed_field=reference_speed_field)
 
     if hotlap:
         logger.info("Extracting hotlap...")
@@ -126,12 +145,15 @@ def main(in_path: Path, out_path: Path, accept: bool,
 
             # rtx_reference_lap should always be present, holding the reference lap time up to
             # the end of the hotlap, then switching to the new personal best (if any) afterwards.
-            # rtx_reference_lap_delta (live timer/delta) should only exist during the hotlap itself.
+            # rtx_reference_lap_delta/rtx_reference_lap_speed/rtx_reference_lap_speed_delta (live
+            # comparisons) should only exist during the hotlap itself.
             for ts, point in track.points_iter:
                 point['rtx_reference_lap'] = reference_lap_time if ts <= lap_end else updated_reference_lap_time
 
                 if not (lap_start <= ts <= lap_end):
                     point.pop('rtx_reference_lap_delta', None)
+                    point.pop('rtx_reference_lap_speed', None)
+                    point.pop('rtx_reference_lap_speed_delta', None)
 
         # Whole-session metadata (bounds, totals, averages) is now stale; drop it and let
         # calculate_additional_data regenerate it from the remaining (trimmed) points only.
@@ -228,6 +250,15 @@ def add_argparser(subparsers: argparse._SubParsersAction) -> None:
         dest="reference_best",
         action="store_true",
         help="Update the reference lap if the current session produces a faster lap (requires --track and --reference).",
+    )
+    parser.add_argument(
+        "--reference-speed-field",
+        dest="reference_speed_field",
+        type=str,
+        metavar="FIELD",
+        default=DEFAULT_REFERENCE_SPEED_FIELD,
+        help=f"Point field to use for reference-lap speed comparisons (requires --reference; default: '{DEFAULT_REFERENCE_SPEED_FIELD}'). "
+             "E.g. 'velocity' to use a raw device channel instead of the computed speed.",
     )
     parser.add_argument(
         "--hotlap",

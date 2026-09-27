@@ -540,6 +540,10 @@ class RtxV1Parser(BaseParser):
                     data['rtx_reference_lap_delta'] = float(text)
                 case "rtx_reference_lap":
                     data['rtx_reference_lap'] = float(text)
+                case "rtx_reference_lap_speed":
+                    data['rtx_reference_lap_speed'] = float(text)
+                case "rtx_reference_lap_speed_delta":
+                    data['rtx_reference_lap_speed_delta'] = float(text)
                 case _:
                     logger.debug(f"Ignored RTX V1 field tag: \"{tag}\"")
 
