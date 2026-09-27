@@ -360,6 +360,17 @@ class Track:
                     del point[field]
 
 
+    def trim_points(self, start_time: datetime, end_time: datetime) -> None:
+        """Remove all points outside of [start_time, end_time] (inclusive)."""
+        if start_time > end_time:
+            raise ValueError("start_time must not be after end_time.")
+
+        self._points = {
+            ts: point for ts, point in self._points.items()
+            if start_time <= ts <= end_time
+        }
+
+
     def set_metadata(self, key: str, value: Value) -> None:
         if key in metadata_fields and metadata_fields[key].pytype == float and isinstance(value, int):
             value = float(value)

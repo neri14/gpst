@@ -426,3 +426,47 @@ def test_interpolate_reference_time_at_distance_returns_correct_value():
     assert rt._interpolate_reference_time_at_distance(progress, 250.0) is None
     assert rt._interpolate_reference_time_at_distance([], 50.0) is None
     assert rt._interpolate_reference_time_at_distance([(0.0, 0.0)], 50.0) is None
+
+
+def test_find_fastest_lap_segment_returns_quickest_lap():
+    track = Track()
+    base_time = datetime(2026, 1, 1, 12, 0, 0)
+
+    track.add_segment({
+        "name": "Lap 1", "source": "racetrack", "type": SegmentType.LAP,
+        "start_time": base_time, "end_time": base_time + timedelta(seconds=30),
+        "total_elapsed_time": 30.0,
+    })
+    track.add_segment({
+        "name": "Lap 2", "source": "racetrack", "type": SegmentType.LAP,
+        "start_time": base_time + timedelta(seconds=30), "end_time": base_time + timedelta(seconds=52),
+        "total_elapsed_time": 22.0,
+    })
+    track.add_segment({
+        "name": "Lap 3", "source": "racetrack", "type": SegmentType.LAP,
+        "start_time": base_time + timedelta(seconds=52), "end_time": base_time + timedelta(seconds=80),
+        "total_elapsed_time": 28.0,
+    })
+    track.add_segment({
+        "name": "Pit stop 1", "source": "racetrack", "type": SegmentType.PITSTOP,
+        "start_time": base_time + timedelta(seconds=80), "end_time": base_time + timedelta(seconds=200),
+        "total_elapsed_time": 120.0,
+    })
+
+    fastest = Racetrack.find_fastest_lap_segment(track)
+    assert fastest is not None
+    assert fastest["name"] == "Lap 2"
+    assert fastest["total_elapsed_time"] == 22.0
+
+
+def test_find_fastest_lap_segment_returns_none_without_lap_segments():
+    track = Track()
+    assert Racetrack.find_fastest_lap_segment(track) is None
+
+    base_time = datetime(2026, 1, 1, 12, 0, 0)
+    track.add_segment({
+        "name": "Pit stop 1", "source": "racetrack", "type": SegmentType.PITSTOP,
+        "start_time": base_time, "end_time": base_time + timedelta(seconds=60),
+        "total_elapsed_time": 60.0,
+    })
+    assert Racetrack.find_fastest_lap_segment(track) is None

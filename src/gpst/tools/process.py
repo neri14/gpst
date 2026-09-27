@@ -1,21 +1,27 @@
 import argparse
 
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from ..data.processors import calculate_additional_data, fix_elevation
 from ..data.load_track import load_track
 from ..data.save_track import save_track
-from ..data.processors import load_racetrack
+from ..data.processors import Racetrack, load_racetrack
 from ._tool_descriptor import Tool
 from ._common import verify_in_path, verify_out_path
+from ..utils.helpers import to_string
 from ..utils.logger import logger
+
+
+HOTLAP_PADDING_SECONDS = 60.0
 
 
 def main(in_path: Path, out_path: Path, accept: bool,
          dem_files: list[Path] | None, dem_crs: str | None,
          elevation_smoothing_window: int, grade_calculation_window: int,
          racetrack: Path | None,
-         reference: Path | None, reference_best: bool) -> bool:
+         reference: Path | None, reference_best: bool,
+         hotlap: bool) -> bool:
     if not verify_in_path(in_path):
         return False
     if not verify_out_path(out_path, accept):
@@ -26,6 +32,9 @@ def main(in_path: Path, out_path: Path, accept: bool,
         return False
     if reference_best and racetrack is None:
         logger.error("The '--reference-best' option requires '--track' to be specified.")
+        return False
+    if hotlap and racetrack is None:
+        logger.error("The '--hotlap' option requires '--track' to be specified.")
         return False
 
     logger.info(f"Loading '{in_path}'...")
@@ -85,6 +94,36 @@ def main(in_path: Path, out_path: Path, accept: bool,
                                             reference_lap_time=reference_lap_time,
                                             reference_lap_progress=reference_lap_progress,
                                             reference_best=reference_best)
+
+    if hotlap:
+        logger.info("Extracting hotlap...")
+
+        hotlap_segment = Racetrack.find_fastest_lap_segment(track)
+        if hotlap_segment is None:
+            logger.error("No completed laps found in session; cannot extract hotlap.")
+            return False
+
+        lap_start = hotlap_segment.get('start_time')
+        lap_end = hotlap_segment.get('end_time')
+        if not isinstance(lap_start, datetime) or not isinstance(lap_end, datetime):
+            logger.error("Fastest lap segment is missing start/end time; cannot extract hotlap.")
+            return False
+
+        window_start = lap_start - timedelta(seconds=HOTLAP_PADDING_SECONDS)
+        window_end = lap_end + timedelta(seconds=HOTLAP_PADDING_SECONDS)
+
+        logger.info(f"Hotlap is '{hotlap_segment.get('name')}' ({hotlap_segment['total_elapsed_time']:.3f}s). "
+                    f"Trimming track to {to_string(window_start)} - {to_string(window_end)}.")
+        track.trim_points(window_start, window_end)
+
+        # Whole-session metadata (bounds, totals, averages) is now stale; drop it and let
+        # calculate_additional_data regenerate it from the remaining (trimmed) points only.
+        preserved_metadata_keys = {'name', 'sport', 'sub_sport', 'sport_profile_name', 'device'}
+        track.remove_metadata([key for key in track.metadata.keys() if key not in preserved_metadata_keys])
+
+        track = calculate_additional_data(track,
+                                          elevation_smoothing_window=elevation_smoothing_window,
+                                          grade_calculation_window=grade_calculation_window)
 
     logger.info(f"Storing '{out_path}'...")
     ok = save_track(track, out_path)
@@ -172,6 +211,12 @@ def add_argparser(subparsers: argparse._SubParsersAction) -> None:
         dest="reference_best",
         action="store_true",
         help="Update the reference lap if the current session produces a faster lap (requires --track and --reference).",
+    )
+    parser.add_argument(
+        "--hotlap",
+        dest="hotlap",
+        action="store_true",
+        help=f"Trim output to the fastest lap of the session, plus {int(HOTLAP_PADDING_SECONDS)}s before and after (requires --track).",
     )
 
 

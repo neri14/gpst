@@ -41,7 +41,8 @@ options:
 
 ```
 $ gpst process -h
-usage: gpst process [-h] -o OUT_FILE [-y] [--fix-elevation DEM_FILE [DEM_FILE ...]] [--dem-crs DEM_CRS] [--elevation-smoothing-window METERS] [--grade-calculation-window METERS] IN_FILE
+usage: gpst process [-h] -o OUT_FILE [-y] [--fix-elevation DEM_FILE [DEM_FILE ...]] [--dem-crs DEM_CRS] [--elevation-smoothing-window METERS] [--grade-calculation-window METERS]
+                     [--track TRACK_FILE] [--reference REF_FILE] [--reference-best] [--hotlap] IN_FILE
 
 positional arguments:
   IN_FILE               Path to input file (.gpx, .fit, .vbo).
@@ -58,6 +59,10 @@ options:
                         Smoothing window for elevation data in meters (default: 100).
   --grade-calculation-window METERS
                         Window size for grade calculation in meters (default: 100).
+  --track TRACK_FILE     Path to a track file to be used for racetrack calculations.
+  --reference REF_FILE  Path to an input file (.gpx, .fit, .vbo) to use as reference lap (requires --track).
+  --reference-best      Update the reference lap if the current session produces a faster lap (requires --track and --reference).
+  --hotlap              Trim output to the fastest lap of the session, plus 60s before and after (requires --track).
 ```
 
 Example DEM coordinate reference systems:
@@ -83,6 +88,10 @@ When `--fix-elevation` is in use, tool produces report in form of csv file and p
 [![Plot](./docs/images/plot.png)](./docs/images/plot.png)
 
 </details>
+
+`--hotlap` trims the output to just the fastest lap of the session, plus 60s before and after it - handy for producing a short overlay clip of your best lap instead of the whole session (requires `--track`; combine with `--reference` to also get a personal-best comparison in the clip):
+
+`$ gpst process ./session.vbo --track ./poznan.track --reference ./reference.vbo --hotlap -o ./hotlap.gpx`
 
 
 ### gpst plot

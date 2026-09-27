@@ -134,6 +134,23 @@ class Racetrack:
         return float(best_lap_time), progress_samples
 
 
+    @staticmethod
+    def find_fastest_lap_segment(track: Track) -> dict | None:
+        """Find the fastest completed lap segment in a processed track.
+
+        Returns the segment dict, or None if no valid lap segments are found.
+        """
+        lap_segments = [
+            seg for _, seg in track.segments_iter
+            if seg.get('type') == SegmentType.LAP and isinstance(seg.get('total_elapsed_time'), (int, float))
+        ]
+
+        if not lap_segments:
+            return None
+
+        return min(lap_segments, key=lambda seg: seg['total_elapsed_time'])
+
+
     def calculate_racetrack_data(self, track: Track,
                                   reference_lap_time: float | None = None,
                                   reference_lap_progress: list[tuple[float, float]] | None = None,

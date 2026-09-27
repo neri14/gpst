@@ -256,3 +256,29 @@ def test_nok_upsert_point_invalid_data():
 
     with pytest.raises(TypeError, match="Data must be a dictionary"):
         track.upsert_point(timestamp_in, invalid_data)
+
+
+def test_ok_trim_points_keeps_only_points_within_inclusive_range():
+    track = Track()
+
+    timestamps_in = [
+        datetime(2024, 1, 1, 12, 0, 0),
+        datetime(2024, 1, 1, 12, 0, 30),
+        datetime(2024, 1, 1, 12, 1, 0),
+        datetime(2024, 1, 1, 12, 1, 30),
+        datetime(2024, 1, 1, 12, 2, 0),
+    ]
+    for ts in timestamps_in:
+        track.upsert_point(ts, {"time": ts, "lat": 0.0, "lon": 0.0})
+
+    track.trim_points(datetime(2024, 1, 1, 12, 0, 30), datetime(2024, 1, 1, 12, 1, 30))
+
+    remaining = sorted(track.points.keys())
+    assert remaining == timestamps_in[1:4], "Only points within [start, end] inclusive should remain."
+
+
+def test_nok_trim_points_invalid_range():
+    track = Track()
+
+    with pytest.raises(ValueError, match="start_time must not be after end_time"):
+        track.trim_points(datetime(2024, 1, 1, 12, 1, 0), datetime(2024, 1, 1, 12, 0, 0))
