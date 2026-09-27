@@ -93,6 +93,8 @@ When `--fix-elevation` is in use, tool produces report in form of csv file and p
 
 `$ gpst process ./session.vbo --track ./poznan.track --reference ./reference.vbo --hotlap -o ./hotlap.gpx`
 
+When combined with `--reference`, the trimmed output keeps `rtx_reference_lap` set on every point (holding the reference lap time throughout the pre-roll and the hotlap itself, then switching to the hotlap's own time from the moment it finishes if it was faster), while `rtx_reference_lap_delta` (the live delta/timer) is only present for points inside the hotlap itself, not during the 60s padding before or after.
+
 
 ### gpst plot
 

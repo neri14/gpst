@@ -116,6 +116,23 @@ def main(in_path: Path, out_path: Path, accept: bool,
                     f"Trimming track to {to_string(window_start)} - {to_string(window_end)}.")
         track.trim_points(window_start, window_end)
 
+        if reference_lap_time is not None:
+            hotlap_time = hotlap_segment['total_elapsed_time']
+            updated_reference_lap_time = min(hotlap_time, reference_lap_time)
+
+            if updated_reference_lap_time < reference_lap_time:
+                logger.info(f"Hotlap ({hotlap_time:.3f}s) beats reference lap ({reference_lap_time:.3f}s); "
+                            f"personal best will update to {updated_reference_lap_time:.3f}s once the hotlap finishes.")
+
+            # rtx_reference_lap should always be present, holding the reference lap time up to
+            # the end of the hotlap, then switching to the new personal best (if any) afterwards.
+            # rtx_reference_lap_delta (live timer/delta) should only exist during the hotlap itself.
+            for ts, point in track.points_iter:
+                point['rtx_reference_lap'] = reference_lap_time if ts <= lap_end else updated_reference_lap_time
+
+                if not (lap_start <= ts <= lap_end):
+                    point.pop('rtx_reference_lap_delta', None)
+
         # Whole-session metadata (bounds, totals, averages) is now stale; drop it and let
         # calculate_additional_data regenerate it from the remaining (trimmed) points only.
         preserved_metadata_keys = {'name', 'sport', 'sub_sport', 'sport_profile_name', 'device'}
